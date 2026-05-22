@@ -126,6 +126,11 @@ export default function Sidebar({ user }: SidebarProps) {
             </div>
           </div>
         )}
+        <div style={{ padding: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+          <p style={{ margin: '0 0 0.25rem 0' }}><strong>Dev:</strong> Radhiv Kansara</p>
+          <p style={{ margin: '0 0 0.25rem 0' }}><strong>📞</strong> 6354184700</p>
+          <p style={{ margin: 0, wordBreak: 'break-all' }}><strong>✉️</strong> radhivkansara1206@gmail.com</p>
+        </div>
       </aside>
     </>
   );
