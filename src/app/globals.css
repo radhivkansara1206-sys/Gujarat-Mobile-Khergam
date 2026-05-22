@@ -2620,3 +2620,37 @@ table.data-table {
   -webkit-overflow-scrolling: touch;
   width: 100%;
 }
+
+/* ── Activity UI Fixes ── */
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.activity-item:last-child {
+  border-bottom: none;
+}
+.activity-details {
+  flex: 1;
+  min-width: 0; /* Prevents flexbox overflow */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.activity-name {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+.activity-meta {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.activity-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}

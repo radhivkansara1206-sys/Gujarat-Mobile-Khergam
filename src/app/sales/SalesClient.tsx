@@ -200,7 +200,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                   <th>Unit Price</th>
                   <th>Total</th>
                   <th>Payment</th>
-                  <th>Ref #</th>
+                  <th>Details</th>
                   <th>By</th>
                   {isAdmin && <th>Actions</th>}
                 </tr>
@@ -219,7 +219,9 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                         {sale.paymentType === 'cash' ? '₹ Cash' : sale.paymentType === 'online' ? '📱 Online' : '🎁 Gift'}
                       </span>
                     </td>
-                    <td className="text-secondary">{sale.referenceNumber || '—'}</td>
+                    <td className="text-secondary">
+                      {sale.paymentType === 'gift' ? (sale.notes || '—') : (sale.referenceNumber || '—')}
+                    </td>
                     <td className="text-secondary">{sale.user?.name}</td>
                     {isAdmin && (
                       <td>
