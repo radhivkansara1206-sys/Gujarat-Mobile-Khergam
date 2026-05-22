@@ -233,9 +233,8 @@ strong {
    ========================================================== */
 
 .app-layout {
-  display: grid;
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
+  display: flex;
 }
 
 .main-content {
@@ -245,6 +244,7 @@ strong {
   background-color: var(--bg-main);
   min-height: 100vh;
   width: 100%;
+  margin-left: var(--sidebar-width);
 }
 
 .page-header {
@@ -2357,7 +2357,12 @@ table.data-table {
 
 @media (max-width: 1024px) {
   .app-layout {
-    grid-template-columns: 1fr;
+    display: block;
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
   }
 
   .sidebar {
