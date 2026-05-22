@@ -2636,7 +2636,7 @@ table.data-table {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  padding: 1rem 0;
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border);
 }
 .activity-item:last-child {
@@ -2676,5 +2676,17 @@ table.data-table {
 @media (min-width: 1024px) {
   .dashboard-grid {
     grid-template-columns: 2fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .activity-item {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .activity-item {
+    padding: 0.875rem 1rem;
   }
 }
