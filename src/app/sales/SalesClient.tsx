@@ -95,7 +95,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
     if (result.success) {
       showToast('Sale deleted and stock reverted');
       setDeletingSale(null);
-      handleFilter(new Event('submit') as any); // refresh
+      handleFilter(); // refresh
     } else {
       showToast(result.error || 'Failed to delete sale', 'error');
     }
