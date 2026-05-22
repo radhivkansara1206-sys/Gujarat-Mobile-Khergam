@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Modal from '@/components/Modal';
-import { createUser, deleteUser } from '@/app/actions/users';
+import { createUser, deleteUser, updateUser } from '@/app/actions/users';
 import { logoutAction } from '@/app/actions/auth';
 import { formatDate } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
@@ -16,6 +16,7 @@ interface SettingsClientProps {
 
 export default function SettingsClient({ users, currentUserId }: SettingsClientProps) {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
@@ -32,6 +33,21 @@ export default function SettingsClient({ users, currentUserId }: SettingsClientP
       router.refresh();
     } else {
       showToast(result.error || 'Failed to create user', 'error');
+    }
+    setLoading(false);
+  }
+
+  async function handleEditUser(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const result = await updateUser(editingUser.id, formData);
+    if (result.success) {
+      showToast('User updated successfully!');
+      setEditingUser(null);
+      router.refresh();
+    } else {
+      showToast(result.error || 'Failed to update user', 'error');
     }
     setLoading(false);
   }
@@ -121,18 +137,30 @@ export default function SettingsClient({ users, currentUserId }: SettingsClientP
                   <td>{user._count?.gifts || 0}</td>
                   <td className="text-secondary">{formatDate(user.createdAt)}</td>
                   <td>
-                    {user.id !== currentUserId && (
+                    <div className="flex-gap">
                       <button
-                        className="btn btn-ghost btn-sm text-danger"
-                        onClick={() => setDeletingUser(user)}
-                        title="Delete user"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setEditingUser(user)}
+                        title="Edit user"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="3 6 5 6 21 6"/>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                       </button>
-                    )}
+                      {user.id !== currentUserId && (
+                        <button
+                          className="btn btn-ghost btn-sm text-danger"
+                          onClick={() => setDeletingUser(user)}
+                          title="Delete user"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -178,6 +206,39 @@ export default function SettingsClient({ users, currentUserId }: SettingsClientP
             </button>
           </div>
         </form>
+    </Modal>
+
+      {/* Edit User Modal */}
+      <Modal isOpen={!!editingUser} onClose={() => setEditingUser(null)} title="Edit User">
+        {editingUser && (
+          <form onSubmit={handleEditUser}>
+            <div className="form-group">
+              <label className="form-label">Full Name *</label>
+              <input name="name" className="form-input" defaultValue={editingUser.name} required />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email *</label>
+              <input name="email" type="email" className="form-input" defaultValue={editingUser.email} required />
+            </div>
+            <div className="form-group">
+              <label className="form-label">New Password</label>
+              <input name="password" type="password" className="form-input" placeholder="Leave blank to keep current password" minLength={6} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Role</label>
+              <select name="role" className="form-select" defaultValue={editingUser.role}>
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setEditingUser(null)}>Cancel</button>
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? <><span className="spinner"></span> Saving...</> : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        )}
       </Modal>
 
       {/* Delete User Confirmation */}

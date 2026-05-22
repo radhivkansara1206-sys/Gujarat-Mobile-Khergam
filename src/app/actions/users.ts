@@ -95,3 +95,60 @@ export async function deleteUser(id: string) {
     return { success: false, error: 'Failed to delete user' };
   }
 }
+
+export async function updateUser(id: string, formData: FormData) {
+  try {
+    await requireAdmin();
+    const email = formData.get('email') as string;
+    const name = formData.get('name') as string;
+    const password = formData.get('password') as string;
+    const role = (formData.get('role') as string) || 'staff';
+
+    if (!email || !name) {
+      return { success: false, error: 'Email and name are required' };
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing && existing.id !== id) {
+      return { success: false, error: 'A user with this email already exists' };
+    }
+
+    const data: any = {
+      email: email.trim().toLowerCase(),
+      name: name.trim(),
+      role,
+    };
+
+    if (password) {
+      if (password.length < 6) {
+        return { success: false, error: 'Password must be at least 6 characters' };
+      }
+      data.password = await bcrypt.hash(password, 12);
+    }
+
+    // Protection against removing the last admin
+    if (role !== 'admin') {
+      const user = await prisma.user.findUnique({ where: { id } });
+      if (user?.role === 'admin') {
+        const adminCount = await prisma.user.count({ where: { role: 'admin' } });
+        if (adminCount <= 1) {
+          return { success: false, error: 'Cannot demote the last admin user' };
+        }
+      }
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data,
+    });
+
+    revalidatePath('/settings');
+    return { success: true, data: { id: updatedUser.id, email: updatedUser.email, name: updatedUser.name, role: updatedUser.role } };
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
+      return { success: false, error: error.message };
+    }
+    console.error('Update user error:', error);
+    return { success: false, error: 'Failed to update user' };
+  }
+}
