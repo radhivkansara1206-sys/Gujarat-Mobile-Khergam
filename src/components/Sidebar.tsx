@@ -96,7 +96,7 @@ export default function Sidebar({ user }: SidebarProps) {
       <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-logo" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem' }}>
           <img 
-            src="/logo.png" 
+            src="/banner.jpg" 
             alt="Gujarat Mobile Logo" 
             style={{ width: '100%', maxWidth: '220px', height: 'auto', borderRadius: '6px', marginBottom: '0.5rem' }} 
           />
