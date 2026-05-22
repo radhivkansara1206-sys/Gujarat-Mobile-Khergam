@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
+import { logoutAction } from '@/app/actions/auth';
 
 interface SidebarProps {
   user: { name: string; role: string } | null;
@@ -123,6 +124,11 @@ export default function Sidebar({ user }: SidebarProps) {
             <div className="sidebar-user-info">
               <span className="sidebar-user-name">{user.name}</span>
               <span className="sidebar-user-role">{user.role}</span>
+              <form action={logoutAction} style={{ marginTop: '0.25rem' }}>
+                <button type="submit" style={{ background: 'transparent', border: 'none', color: '#ff4444', fontSize: '0.75rem', cursor: 'pointer', padding: 0, fontWeight: 500 }}>
+                  Logout
+                </button>
+              </form>
             </div>
           </div>
         )}

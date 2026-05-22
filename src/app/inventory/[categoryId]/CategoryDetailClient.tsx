@@ -20,6 +20,7 @@ export default function CategoryDetailClient({ category, items, isAdmin }: Categ
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [updatingStockItem, setUpdatingStockItem] = useState<any>(null);
   const [deletingItem, setDeletingItem] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
@@ -58,6 +59,22 @@ export default function CategoryDetailClient({ category, items, isAdmin }: Categ
       router.refresh();
     } else {
       showToast(result.error || 'Failed to update item', 'error');
+    }
+    setLoading(false);
+  }
+
+  async function handleUpdateStock(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    formData.set('name', updatingStockItem.name); // keep name intact
+    const result = await updateItem(updatingStockItem.id, formData);
+    if (result.success) {
+      showToast('Stock updated successfully!');
+      setUpdatingStockItem(null);
+      router.refresh();
+    } else {
+      showToast(result.error || 'Failed to update stock', 'error');
     }
     setLoading(false);
   }
@@ -148,19 +165,26 @@ export default function CategoryDetailClient({ category, items, isAdmin }: Categ
                     <td><StockBadge stock={item.stock} threshold={item.lowStockThreshold} /></td>
                     <td>
                       <div className="table-actions">
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingItem(item)} title="Edit">
+                        <button className="btn btn-ghost btn-sm text-primary" onClick={() => setUpdatingStockItem(item)} title="Update Stock">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                           </svg>
                         </button>
                         {isAdmin && (
-                          <button className="btn btn-ghost btn-sm text-danger" onClick={() => setDeletingItem(item)} title="Delete">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3 6 5 6 21 6"/>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            </svg>
-                          </button>
+                          <>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setEditingItem(item)} title="Edit Item">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </button>
+                            <button className="btn btn-ghost btn-sm text-danger" onClick={() => setDeletingItem(item)} title="Delete">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -260,6 +284,29 @@ export default function CategoryDetailClient({ category, items, isAdmin }: Categ
               <button type="button" className="btn btn-secondary" onClick={() => setEditingItem(null)}>Cancel</button>
               <button type="submit" className="btn btn-primary" disabled={loading}>
                 {loading ? <><span className="spinner"></span> Saving...</> : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Quick Update Stock Modal */}
+      <Modal isOpen={!!updatingStockItem} onClose={() => setUpdatingStockItem(null)} title="Update Stock" size="sm">
+        {updatingStockItem && (
+          <form onSubmit={handleUpdateStock}>
+            <p style={{ marginBottom: '1rem' }}>
+              <strong>{updatingStockItem.name}</strong>
+              <br />
+              <span className="text-secondary">Current stock: {updatingStockItem.stock} | Threshold: {updatingStockItem.lowStockThreshold}</span>
+            </p>
+            <div className="form-group">
+              <label className="form-label">New Stock Quantity</label>
+              <input name="stock" type="number" className="form-input" defaultValue={updatingStockItem.stock} min="0" required autoFocus />
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setUpdatingStockItem(null)}>Cancel</button>
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? <><span className="spinner"></span> Updating...</> : 'Update Stock'}
               </button>
             </div>
           </form>
