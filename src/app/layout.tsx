@@ -32,7 +32,12 @@ export default async function RootLayout({
           {session ? (
             <div className="app-layout">
               <Sidebar user={{ name: session.name, role: session.role }} />
-              <main className="main-content">{children}</main>
+              <main className="main-content">
+                <div style={{ width: '100%', marginBottom: '1.5rem', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', background: '#ff6600' }}>
+                  <img src="/banner.jpg" alt="Gujarat Mobile Banner" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                </div>
+                {children}
+              </main>
             </div>
           ) : (
             <>{children}</>

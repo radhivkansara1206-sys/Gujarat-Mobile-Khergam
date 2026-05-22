@@ -31,9 +31,9 @@ export default function LoginPage() {
       <div className="login-card">
         <div className="login-logo" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <img 
-            src="/logo.png" 
-            alt="Gujarat Mobile Logo" 
-            style={{ width: '100%', maxWidth: '320px', height: 'auto', marginBottom: '1rem', borderRadius: '8px' }} 
+            src="/banner.jpg" 
+            alt="Gujarat Mobile Banner" 
+            style={{ width: '100%', maxWidth: '380px', height: 'auto', marginBottom: '1rem', borderRadius: '8px' }} 
           />
           <span className="login-logo-accent">Khergam</span>
         </div>
