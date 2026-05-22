@@ -30,6 +30,7 @@ export default async function DashboardPage() {
       categories={categories}
       lowStockItems={lowStockItems}
       userName={session.name}
+      isAdmin={session.role === 'admin'}
     />
   );
 }

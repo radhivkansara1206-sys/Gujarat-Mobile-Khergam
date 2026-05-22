@@ -10,5 +10,5 @@ export default async function AlertsPage() {
   const result = await getLowStockItems();
   const items = result.data || [];
 
-  return <AlertsClient items={JSON.parse(JSON.stringify(items))} />;
+  return <AlertsClient items={JSON.parse(JSON.stringify(items))} isAdmin={session.role === 'admin'} />;
 }

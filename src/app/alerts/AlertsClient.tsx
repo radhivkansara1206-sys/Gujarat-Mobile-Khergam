@@ -11,9 +11,10 @@ import BackButton from '@/components/BackButton';
 
 interface AlertsClientProps {
   items: any[];
+  isAdmin: boolean;
 }
 
-export default function AlertsClient({ items }: AlertsClientProps) {
+export default function AlertsClient({ items, isAdmin }: AlertsClientProps) {
   const [updatingItem, setUpdatingItem] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
@@ -79,9 +80,11 @@ export default function AlertsClient({ items }: AlertsClientProps) {
                     </div>
                     <div className="alert-item-footer">
                       <span className="text-secondary">Threshold: {item.lowStockThreshold} units</span>
-                      <button className="btn btn-primary btn-sm" onClick={() => setUpdatingItem(item)}>
-                        Restock
-                      </button>
+                      {isAdmin && (
+                        <button className="btn btn-primary btn-sm" onClick={() => setUpdatingItem(item)}>
+                          Restock
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -112,9 +115,11 @@ export default function AlertsClient({ items }: AlertsClientProps) {
                     </div>
                     <div className="alert-item-footer">
                       <span className="text-secondary">Threshold: {item.lowStockThreshold} units</span>
-                      <button className="btn btn-primary btn-sm" onClick={() => setUpdatingItem(item)}>
-                        Update Stock
-                      </button>
+                      {isAdmin && (
+                        <button className="btn btn-primary btn-sm" onClick={() => setUpdatingItem(item)}>
+                          Update Stock
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

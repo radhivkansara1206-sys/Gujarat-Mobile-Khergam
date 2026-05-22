@@ -11,6 +11,7 @@ interface DashboardClientProps {
   categories: any[];
   lowStockItems: any[];
   userName: string;
+  isAdmin: boolean;
 }
 
 export default function DashboardClient({
@@ -19,6 +20,7 @@ export default function DashboardClient({
   categories,
   lowStockItems,
   userName,
+  isAdmin,
 }: DashboardClientProps) {
   return (
     <div>
@@ -86,18 +88,20 @@ export default function DashboardClient({
           }
           footer={`${stats?.outOfStockCount || 0} out of stock`}
         />
-        <StatsCard
-          label="Inventory Value"
-          value={formatCurrency(stats?.totalValue || 0)}
-          variant="value"
-          icon={
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="2" y="5" width="20" height="14" rx="2"/>
-              <line x1="2" y1="10" x2="22" y2="10"/>
-            </svg>
-          }
-          footer="Based on selling prices"
-        />
+        {isAdmin && (
+          <StatsCard
+            label="Inventory Value"
+            value={formatCurrency(stats?.totalValue || 0)}
+            variant="value"
+            icon={
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+              </svg>
+            }
+            footer="Based on selling prices"
+          />
+        )}
       </div>
 
       {/* Two column layout: Recent Activity + Categories */}
