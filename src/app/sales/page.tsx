@@ -30,6 +30,7 @@ export default async function SalesPage() {
         categoryName: i.category?.name || '',
         categoryId: i.categoryId,
       }))}
+      isAdmin={session.role === 'admin'}
     />
   );
 }

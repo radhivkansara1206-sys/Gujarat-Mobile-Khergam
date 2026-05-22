@@ -120,3 +120,38 @@ export async function getSales(filters?: {
     return { success: false, error: 'Failed to fetch sales' };
   }
 }
+
+export async function deleteSale(saleId: string) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+      return { success: false, error: 'Unauthorized: Only admins can delete sales' };
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Find the sale
+      const sale = await tx.sale.findUnique({ where: { id: saleId } });
+      if (!sale) throw new Error('Sale not found');
+
+      // Revert stock (add the quantity back)
+      await tx.item.update({
+        where: { id: sale.itemId },
+        data: { stock: { increment: sale.quantity } },
+      });
+
+      // Delete the sale record
+      await tx.sale.delete({ where: { id: saleId } });
+
+      return true;
+    });
+
+    revalidatePath('/sales');
+    revalidatePath('/inventory');
+    revalidatePath('/');
+    revalidatePath('/alerts');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Delete sale error:', error);
+    return { success: false, error: error.message || 'Failed to delete sale' };
+  }
+}

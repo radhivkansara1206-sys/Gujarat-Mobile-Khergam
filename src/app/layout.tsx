@@ -5,9 +5,9 @@ import { ToastProvider } from '@/components/Toast';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Gujarat Mobile Khergam Accessories',
-  description: 'Official stock management and accessory inventory system for Gujarat Mobile Khergam Accessories.',
-  keywords: 'Gujarat Mobile Khergam Accessories, Gujarat Mobile, Khergam Mobile Shop, Accessories, Stock Management',
+  title: 'Gujarat Mobile Khergam',
+  description: 'Official stock management and inventory system for Gujarat Mobile Khergam.',
+  keywords: 'Gujarat Mobile Khergam, Gujarat Mobile, Khergam Mobile Shop, Stock Management',
 };
 
 export default async function RootLayout({

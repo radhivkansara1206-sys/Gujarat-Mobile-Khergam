@@ -43,12 +43,12 @@
    ========================================================== */
 
 :root {
-  /* ── Primary Brand ── */
-  --primary: #f59e0b;
-  --primary-hover: #d97706;
-  --primary-light: #fef3c7;
-  --primary-dark: #b45309;
-  --primary-rgb: 245, 158, 11;
+  /* ── Primary Brand (Gujarat Mobile Orange) ── */
+  --primary: #ff6600;
+  --primary-hover: #e65c00;
+  --primary-light: #fff0e6;
+  --primary-dark: #cc5200;
+  --primary-rgb: 255, 102, 0;
 
   /* ── Sidebar ── */
   --sidebar-bg: #0f172a;

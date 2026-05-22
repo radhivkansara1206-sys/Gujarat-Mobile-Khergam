@@ -91,3 +91,38 @@ export async function getGifts(filters?: {
     return { success: false, error: 'Failed to fetch gifts' };
   }
 }
+
+export async function deleteGift(giftId: string) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+      return { success: false, error: 'Unauthorized: Only admins can delete gifts' };
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Find the gift
+      const gift = await tx.gift.findUnique({ where: { id: giftId } });
+      if (!gift) throw new Error('Gift not found');
+
+      // Revert stock (add the quantity back)
+      await tx.item.update({
+        where: { id: gift.itemId },
+        data: { stock: { increment: gift.quantity } },
+      });
+
+      // Delete the gift record
+      await tx.gift.delete({ where: { id: giftId } });
+
+      return true;
+    });
+
+    revalidatePath('/gifts');
+    revalidatePath('/inventory');
+    revalidatePath('/');
+    revalidatePath('/alerts');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Delete gift error:', error);
+    return { success: false, error: error.message || 'Failed to delete gift' };
+  }
+}

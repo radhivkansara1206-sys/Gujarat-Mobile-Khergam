@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Modal from '@/components/Modal';
-import { recordSale, getSales } from '@/app/actions/sales';
+import { recordSale, getSales, deleteSale } from '@/app/actions/sales';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
@@ -26,14 +26,16 @@ interface SalesClientProps {
     categoryName: string;
     categoryId: string;
   }[];
+  isAdmin?: boolean;
 }
 
-export default function SalesClient({ initialSales, categories, items }: SalesClientProps) {
+export default function SalesClient({ initialSales, categories, items, isAdmin }: SalesClientProps) {
   const [salesData, setSalesData] = useState(initialSales);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filterLoading, setFilterLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [deletingSale, setDeletingSale] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [paymentType, setPaymentType] = useState<'cash' | 'online' | 'gift'>('cash');
   const { showToast } = useToast();
@@ -86,6 +88,19 @@ export default function SalesClient({ initialSales, categories, items }: SalesCl
     category: cat.name,
     items: items.filter(i => i.categoryId === cat.id),
   })).filter(g => g.items.length > 0);
+
+  async function handleDeleteSale() {
+    setLoading(true);
+    const result = await deleteSale(deletingSale.id);
+    if (result.success) {
+      showToast('Sale deleted and stock reverted');
+      setDeletingSale(null);
+      handleFilter(new Event('submit') as any); // refresh
+    } else {
+      showToast(result.error || 'Failed to delete sale', 'error');
+    }
+    setLoading(false);
+  }
 
   return (
     <div>
@@ -187,6 +202,7 @@ export default function SalesClient({ initialSales, categories, items }: SalesCl
                   <th>Payment</th>
                   <th>Ref #</th>
                   <th>By</th>
+                  {isAdmin && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -205,6 +221,16 @@ export default function SalesClient({ initialSales, categories, items }: SalesCl
                     </td>
                     <td className="text-secondary">{sale.referenceNumber || '—'}</td>
                     <td className="text-secondary">{sale.user?.name}</td>
+                    {isAdmin && (
+                      <td>
+                        <button className="btn btn-ghost btn-sm text-danger" onClick={() => setDeletingSale(sale)} title="Delete Sale">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -328,6 +354,25 @@ export default function SalesClient({ initialSales, categories, items }: SalesCl
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={!!deletingSale} onClose={() => setDeletingSale(null)} title="Delete Sale" size="sm">
+        {deletingSale && (
+          <div>
+            <p>Are you sure you want to delete this sale?</p>
+            <p style={{ marginTop: '0.5rem' }}><strong>{deletingSale.quantity}x {deletingSale.item?.name}</strong></p>
+            <p className="text-secondary" style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
+              This will restore {deletingSale.quantity} units back to the stock inventory. This action cannot be undone.
+            </p>
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setDeletingSale(null)}>Cancel</button>
+              <button className="btn btn-danger" onClick={handleDeleteSale} disabled={loading}>
+                {loading ? <><span className="spinner"></span> Deleting...</> : 'Delete & Restore Stock'}
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
