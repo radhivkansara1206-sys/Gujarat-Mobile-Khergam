@@ -2,6 +2,8 @@
 
 A custom-built, modern web application designed for **Gujarat Mobile Khergam** to easily manage their accessory stock, record daily sales, and track complimentary gifts. 
 
+🌐 **Live Demo / Production:** [https://yes-eight-omega.vercel.app](https://yes-eight-omega.vercel.app)
+
 ## 🚀 Features
 
 - **Inventory Management**: Create categories, add new accessories, set pricing, and track exact stock levels.
