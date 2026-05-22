@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { logoutAction } from '@/app/actions/auth';
 
 interface SidebarProps {
@@ -74,6 +74,29 @@ const NAV_ITEMS = [
 export default function Sidebar({ user, alertsCount }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
@@ -151,6 +174,24 @@ export default function Sidebar({ user, alertsCount }: SidebarProps) {
             </div>
           </div>
         )}
+        
+        {deferredPrompt && (
+          <div style={{ padding: '0 1rem 1rem 1rem' }}>
+            <button 
+              onClick={handleInstallClick}
+              className="btn btn-primary" 
+              style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center', backgroundColor: '#fff', color: '#ff6600', border: 'none' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Install App
+            </button>
+          </div>
+        )}
+
         <div style={{ padding: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
           <p style={{ margin: '0 0 0.25rem 0' }}><strong>Dev:</strong> Radhiv Kansara</p>
           <p style={{ margin: '0 0 0.25rem 0' }}><strong>📞</strong> 6354184700</p>
