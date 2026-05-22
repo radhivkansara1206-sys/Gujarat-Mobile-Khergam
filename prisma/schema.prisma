@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("staff")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sales     Sale[]
+  gifts     Gift[]
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  icon      String   @default("📦")
+  color     String   @default("#f59e0b")
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  items     Item[]
+}
+
+model Item {
+  id                String   @id @default(uuid())
+  categoryId        String
+  name              String
+  brand             String   @default("")
+  model             String   @default("")
+  purchasePrice     Float    @default(0)
+  sellingPrice      Float    @default(0)
+  stock             Int      @default(0)
+  lowStockThreshold Int      @default(5)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  category          Category @relation(fields: [categoryId], references: [id])
+  sales             Sale[]
+  gifts             Gift[]
+
+  @@index([categoryId])
+  @@index([isActive])
+}
+
+model Sale {
+  id              String   @id @default(uuid())
+  itemId          String
+  userId          String
+  quantity        Int
+  unitPrice       Float
+  totalAmount     Float
+  paymentType     String
+  referenceNumber String?  @default("")
+  notes           String?  @default("")
+  createdAt       DateTime @default(now())
+  item            Item     @relation(fields: [itemId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([itemId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([paymentType])
+}
+
+model Gift {
+  id            String   @id @default(uuid())
+  itemId        String
+  userId        String
+  quantity      Int
+  recipientName String?  @default("")
+  reason        String?  @default("")
+  createdAt     DateTime @default(now())
+  item          Item     @relation(fields: [itemId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([itemId])
+  @@index([userId])
+  @@index([createdAt])
+}
