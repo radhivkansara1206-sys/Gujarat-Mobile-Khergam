@@ -122,13 +122,11 @@ export default function DashboardClient({
             ) : (
               activities.map((activity: any) => (
                 <div key={activity.id} className="activity-item">
-                  <div className="activity-icon">
+                  <div className={`activity-icon ${activity.type === 'sale' ? activity.paymentType : 'gift'}`}>
                     {activity.type === 'sale' ? (
-                      <span className={`payment-badge ${activity.paymentType}`}>
-                        {activity.paymentType === 'cash' ? '₹' : '📱'}
-                      </span>
+                      activity.paymentType === 'cash' ? '₹' : '📱'
                     ) : (
-                      <span className="gift-badge">🎁</span>
+                      '🎁'
                     )}
                   </div>
                   <div className="activity-details">

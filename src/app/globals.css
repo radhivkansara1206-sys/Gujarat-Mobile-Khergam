@@ -2609,6 +2609,29 @@ table.data-table {
 }
 
 /* ── Activity UI Fixes ── */
+.activity-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+.activity-icon.cash {
+  background-color: var(--success-light);
+  color: var(--success-dark);
+}
+.activity-icon.online {
+  background-color: var(--info-light);
+  color: var(--info-dark);
+}
+.activity-icon.gift {
+  background-color: #fce7f3;
+  color: #db2777;
+}
+
 .activity-item {
   display: flex;
   align-items: flex-start;
