@@ -1621,29 +1621,14 @@ table.data-table {
   color: var(--success-dark);
 }
 
-.payment-badge.cash::before {
-  content: '₹';
-  font-size: 0.85rem;
-}
-
 .payment-badge.online {
   background-color: var(--info-light);
   color: var(--info-dark);
 }
 
-.payment-badge.online::before {
-  content: '📱';
-  font-size: 0.85rem;
-}
-
 .payment-badge.card {
   background-color: #f3e8ff;
   color: #7c3aed;
-}
-
-.payment-badge.card::before {
-  content: '💳';
-  font-size: 0.85rem;
 }
 
 .gift-badge {
@@ -1657,11 +1642,6 @@ table.data-table {
   background-color: #fce7f3;
   color: #db2777;
   white-space: nowrap;
-}
-
-.gift-badge::before {
-  content: '🎁';
-  font-size: 0.85rem;
 }
 
 
