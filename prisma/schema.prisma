@@ -17,6 +17,7 @@ model User {
   updatedAt DateTime @updatedAt
   sales     Sale[]
   gifts     Gift[]
+  expenses  Expense[]
 }
 
 model Category {
@@ -85,4 +86,18 @@ model Gift {
   @@index([itemId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  amount      Float
+  category    String   // e.g., 'rent', 'salary', 'electricity', 'tea', 'other'
+  description String?  @default("")
+  userId      String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([category])
+  @@index([createdAt])
+  @@index([userId])
 }

@@ -60,6 +60,14 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    href: '/expenses',
+    label: 'Expenses',
+    icon: (
+      <span style={{ fontSize: '1.25rem' }}>💸</span>
+    ),
+    adminOnly: true,
+  },
 ];
 
 export default function Sidebar({ user }: SidebarProps) {
@@ -104,17 +112,20 @@ export default function Sidebar({ user }: SidebarProps) {
           <span className="sidebar-logo-accent">Khergam</span>
         </div>
         <nav className="sidebar-nav">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`sidebar-link ${isActive(item.href) ? 'active' : ''}`}
-              onClick={() => setMobileOpen(false)}
-            >
-              <span className="sidebar-link-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            if (item.adminOnly && user?.role !== 'admin') return null;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`sidebar-link ${isActive(item.href) ? 'active' : ''}`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="sidebar-link-icon">{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
         {user && (
           <div className="sidebar-user">
