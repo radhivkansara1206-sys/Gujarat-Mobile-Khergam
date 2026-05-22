@@ -4,6 +4,8 @@ import Sidebar from '@/components/Sidebar';
 import { ToastProvider } from '@/components/Toast';
 import type { Metadata } from 'next';
 
+import { prisma } from '@/lib/prisma';
+
 export const metadata: Metadata = {
   title: 'Gujarat Mobile Khergam',
   description: 'Official stock management and inventory system for Gujarat Mobile Khergam.',
@@ -16,6 +18,19 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const session = await getSession();
+
+  let alertsCount = 0;
+  if (session) {
+    try {
+      const items = await prisma.item.findMany({
+        where: { isActive: true },
+        select: { stock: true, lowStockThreshold: true }
+      });
+      alertsCount = items.filter(item => item.stock <= item.lowStockThreshold).length;
+    } catch (e) {
+      console.error('Failed to fetch alerts count for sidebar', e);
+    }
+  }
 
   return (
     <html lang="en">
@@ -32,7 +47,7 @@ export default async function RootLayout({
         <ToastProvider>
           {session ? (
             <div className="app-layout">
-              <Sidebar user={{ name: session.name, role: session.role }} />
+              <Sidebar user={{ name: session.name, role: session.role }} alertsCount={alertsCount} />
               <main className="main-content">
                 <div style={{ width: '100%', marginBottom: '1.5rem', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', background: '#ff6600' }}>
                   <img src="/banner.jpg" alt="Gujarat Mobile Banner" style={{ width: '100%', height: 'auto', display: 'block' }} />

@@ -7,6 +7,7 @@ import { logoutAction } from '@/app/actions/auth';
 
 interface SidebarProps {
   user: { name: string; role: string } | null;
+  alertsCount?: number;
 }
 
 const NAV_ITEMS = [
@@ -51,6 +52,14 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: '/expenses',
+    label: 'Expenses',
+    icon: (
+      <span style={{ fontSize: '1.25rem' }}>💸</span>
+    ),
+    adminOnly: true,
+  },
+  {
     href: '/settings',
     label: 'Settings',
     icon: (
@@ -60,17 +69,9 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
-  {
-    href: '/expenses',
-    label: 'Expenses',
-    icon: (
-      <span style={{ fontSize: '1.25rem' }}>💸</span>
-    ),
-    adminOnly: true,
-  },
 ];
 
-export default function Sidebar({ user }: SidebarProps) {
+export default function Sidebar({ user, alertsCount }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -121,7 +122,14 @@ export default function Sidebar({ user }: SidebarProps) {
                 className={`sidebar-link ${isActive(item.href) ? 'active' : ''}`}
                 onClick={() => setMobileOpen(false)}
               >
-                <span className="sidebar-link-icon">{item.icon}</span>
+                <span className="sidebar-link-icon" style={{ position: 'relative' }}>
+                  {item.icon}
+                  {item.href === '/alerts' && alertsCount && alertsCount > 0 ? (
+                    <span style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', color: 'white', fontSize: '0.65rem', fontWeight: 'bold', minWidth: '16px', height: '16px', padding: '0 4px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--sidebar-bg)' }}>
+                      {alertsCount > 99 ? '99+' : alertsCount}
+                    </span>
+                  ) : null}
+                </span>
                 <span>{item.label}</span>
               </Link>
             );
