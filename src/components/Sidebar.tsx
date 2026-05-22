@@ -97,18 +97,13 @@ export default function Sidebar({ user }: SidebarProps) {
       </button>
       {mobileOpen && <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />}
       <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
-              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-              <line x1="8" y1="21" x2="16" y2="21"/>
-              <line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
-          </div>
-          <div>
-            <span className="sidebar-logo-text">Gujarat Mobile</span>
-            <span className="sidebar-logo-accent">Khergam</span>
-          </div>
+        <div className="sidebar-logo" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem' }}>
+          <img 
+            src="/logo.png" 
+            alt="Gujarat Mobile Logo" 
+            style={{ width: '100%', maxWidth: '220px', height: 'auto', borderRadius: '6px', marginBottom: '0.5rem' }} 
+          />
+          <span className="sidebar-logo-accent">Khergam</span>
         </div>
         <nav className="sidebar-nav">
           {NAV_ITEMS.map((item) => (

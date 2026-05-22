@@ -29,13 +29,12 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <div className="login-logo">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" style={{ marginBottom: '1rem' }}>
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-            <line x1="8" y1="21" x2="16" y2="21"/>
-            <line x1="12" y1="17" x2="12" y2="21"/>
-          </svg>
-          <h1>Gujarat Mobile</h1>
+        <div className="login-logo" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <img 
+            src="/logo.png" 
+            alt="Gujarat Mobile Logo" 
+            style={{ width: '100%', maxWidth: '320px', height: 'auto', marginBottom: '1rem', borderRadius: '8px' }} 
+          />
           <span className="login-logo-accent">Khergam</span>
         </div>
         <p className="login-subtitle">Stock Management System</p>
