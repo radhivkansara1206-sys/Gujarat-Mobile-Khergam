@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getReplacements, getAdminNotifications, markNotificationsRead } from '@/app/actions/replacements';
 import { formatDateTime } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
@@ -24,7 +24,24 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
   const [filterCategory, setFilterCategory] = useState('all');
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const highlight = params.get('highlight');
+      if (highlight) {
+        setHighlightedId(highlight);
+        setTimeout(() => {
+          const el = document.getElementById(`row-${highlight}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 500);
+      }
+    }
+  }, []);
 
   async function handleFilter() {
     setFilterLoading(true);
@@ -176,7 +193,7 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
               </thead>
               <tbody>
                 {data.replacements.map((r: any) => (
-                  <tr key={r.id}>
+                  <tr key={r.id} id={`row-${r.id}`} className={highlightedId === r.id ? 'highlighted-row' : ''}>
                     <td>{formatDateTime(r.createdAt)}</td>
                     <td className="font-semibold">{r.item?.name || 'Unknown'}</td>
                     <td>

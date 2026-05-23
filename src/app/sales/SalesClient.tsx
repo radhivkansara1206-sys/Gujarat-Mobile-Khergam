@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
 import { recordSale, getSales, deleteSale } from '@/app/actions/sales';
 import { recordReplacement } from '@/app/actions/replacements';
@@ -38,10 +38,27 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [filterLoading, setFilterLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [deletingSale, setDeletingSale] = useState<any>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [paymentType, setPaymentType] = useState<'cash' | 'online' | 'gift'>('cash');
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const { showToast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const highlight = params.get('highlight');
+      if (highlight) {
+        setHighlightedId(highlight);
+        setTimeout(() => {
+          const el = document.getElementById(`row-${highlight}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 500);
+      }
+    }
+  }, []);
+  const [quantity, setQuantity] = useState(1);
+  const [paymentType, setPaymentType] = useState<'cash' | 'online' | 'gift'>('cash');
 
   // Filters
   const [startDate, setStartDate] = useState('');
@@ -239,7 +256,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
               </thead>
               <tbody>
                 {salesData.sales.map((sale: any) => (
-                  <tr key={sale.id}>
+                  <tr key={sale.id} id={`row-${sale.id}`} className={highlightedId === sale.id ? 'highlighted-row' : ''}>
                     <td className="text-secondary">{formatDateTime(sale.createdAt)}</td>
                     <td className="font-semibold">{sale.item?.name}</td>
                     <td className="text-secondary">{sale.item?.category?.name}</td>

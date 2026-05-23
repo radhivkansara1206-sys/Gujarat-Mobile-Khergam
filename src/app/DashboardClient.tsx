@@ -121,7 +121,7 @@ export default function DashboardClient({
               </div>
             ) : (
               activities.map((activity: any) => {
-                const targetUrl = activity.type === 'replacement' ? '/replacements' : '/sales';
+                const targetUrl = activity.type === 'replacement' ? `/replacements?highlight=${activity.id}` : `/sales?highlight=${activity.id}`;
                 return (
                 <Link key={activity.id} href={targetUrl} className={`activity-item ${activity.type === 'replacement' ? 'highlight-replacement' : ''}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div className={`activity-icon ${activity.type === 'sale' ? activity.paymentType : (activity.type === 'replacement' ? 'replacement' : 'gift')}`}>
