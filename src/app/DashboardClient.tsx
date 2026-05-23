@@ -120,8 +120,10 @@ export default function DashboardClient({
                 <p className="empty-state-text">Sales and gifts will appear here</p>
               </div>
             ) : (
-              activities.map((activity: any) => (
-                <div key={activity.id} className="activity-item">
+              activities.map((activity: any) => {
+                const targetUrl = activity.type === 'replacement' ? '/replacements' : '/sales';
+                return (
+                <Link key={activity.id} href={targetUrl} className="activity-item" style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div className={`activity-icon ${activity.type === 'sale' ? activity.paymentType : (activity.type === 'replacement' ? 'replacement' : 'gift')}`}>
                     {activity.type === 'sale' ? (
                       activity.paymentType === 'cash' ? '₹' : '📱'
@@ -149,8 +151,9 @@ export default function DashboardClient({
                   <span className="activity-time">
                     {formatRelativeTime(activity.createdAt)}
                   </span>
-                </div>
-              ))
+                </Link>
+                );
+              })
             )}
           </div>
         </div>
