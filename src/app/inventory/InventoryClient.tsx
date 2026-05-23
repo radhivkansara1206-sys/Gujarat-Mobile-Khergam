@@ -61,29 +61,41 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
         hour: '2-digit', minute: '2-digit',
       });
 
-      // ── Header ──────────────────────────────────────────────────────
-      doc.setFillColor(255, 102, 0);
-      doc.rect(margin, y, contentW, 1, 'F');
-      y += 4;
+      // ── Try to embed the logo from public folder ──────────────────────
+      try {
+        const logoResp = await fetch('/logo.png');
+        const logoBlob = await logoResp.blob();
+        const logoBase64: string = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(logoBlob);
+        });
+        // Logo: left side, 20x20mm
+        doc.addImage(logoBase64, 'PNG', margin, y, 20, 20);
+      } catch (_) {
+        // Logo optional — continue without it
+      }
 
+      // ── Header text: centered ──────────────────────────────────────────
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
+      doc.setFontSize(20);
       doc.setTextColor(15, 23, 42);
-      doc.text('Gujarat Mobile Khergam', pageW / 2, y, { align: 'center' });
-      y += 7;
+      doc.text('Gujarat Mobile Khergam', pageW / 2, y + 8, { align: 'center' });
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(100, 116, 139);
-      doc.text('Inventory Stock Report', pageW / 2, y, { align: 'center' });
-      y += 5;
-      doc.setFontSize(8);
-      doc.text(`Generated on: ${nowStr}`, pageW / 2, y, { align: 'center' });
-      y += 4;
+      doc.text('Inventory Stock Report', pageW / 2, y + 15, { align: 'center' });
 
-      doc.setDrawColor(226, 232, 240);
-      doc.line(margin, y, margin + contentW, y);
-      y += 6;
+      doc.setFontSize(8);
+      doc.text(`Generated on: ${nowStr}`, pageW / 2, y + 20, { align: 'center' });
+
+      y += 24;
+
+      // Orange accent bar below header
+      doc.setFillColor(255, 102, 0);
+      doc.rect(margin, y, contentW, 1.2, 'F');
+      y += 7;
 
       // ── Summary Box ──────────────────────────────────────────────────
       doc.setFillColor(248, 250, 252);
