@@ -193,6 +193,16 @@ export default function Sidebar({ user, alertsCount }: SidebarProps) {
           </div>
         )}
         
+        <div style={{ padding: '0 1rem 1rem 1rem' }}>
+          <button 
+            onClick={() => window.dispatchEvent(new Event('open-guide'))}
+            className="btn btn-secondary" 
+            style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', marginBottom: deferredPrompt ? '0.5rem' : '0' }}
+          >
+            <span style={{ fontSize: '1.2rem' }}>💡</span>
+            Help & Guide
+          </button>
+        </div>
         {deferredPrompt && (
           <div style={{ padding: '0 1rem 1rem 1rem' }}>
             <button 

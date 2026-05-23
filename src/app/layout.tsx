@@ -2,6 +2,7 @@ import './globals.css';
 import { getSession } from '@/lib/auth';
 import Sidebar from '@/components/Sidebar';
 import { ToastProvider } from '@/components/Toast';
+import QuickStartGuide from '@/components/QuickStartGuide';
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/prisma';
@@ -70,6 +71,7 @@ export default async function RootLayout({
                 </div>
                 {children}
               </main>
+              <QuickStartGuide />
             </div>
           ) : (
             <>{children}</>
