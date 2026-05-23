@@ -2727,12 +2727,12 @@ table.data-table {
 
 /* ── Highlighted Row Effect ── */
 @keyframes highlightPulse {
-  0% { background-color: #fef3c7; box-shadow: inset 4px 0 0 #f59e0b; }
-  50% { background-color: #fffbeb; box-shadow: inset 4px 0 0 #f59e0b; }
-  100% { background-color: #fef3c7; box-shadow: inset 4px 0 0 #f59e0b; }
+  0% { background-color: #e0f2fe; box-shadow: inset 4px 0 0 #0ea5e9; }
+  50% { background-color: #f0f9ff; box-shadow: inset 4px 0 0 #0ea5e9; }
+  100% { background-color: #e0f2fe; box-shadow: inset 4px 0 0 #0ea5e9; }
 }
 
 tr.highlighted-row td {
   animation: highlightPulse 2s infinite;
-  background-color: #fef3c7 !important;
+  background-color: #e0f2fe !important;
 }
