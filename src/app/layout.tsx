@@ -61,8 +61,11 @@ export default async function RootLayout({
             <div className="app-layout">
               <Sidebar user={{ name: session.name, role: session.role }} alertsCount={alertsCount} />
               <main className="main-content">
-                <div style={{ width: '100%', marginBottom: '1.5rem', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', background: '#ff6600' }}>
+                <div style={{ width: '100%', marginBottom: '1.5rem', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', background: 'var(--card-bg)', border: '1px solid var(--border)' }}>
                   <img src="/banner.jpg" alt="Gujarat Mobile Banner" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                  <div style={{ padding: '0.5rem 1rem', background: '#ff6600', color: 'white', fontWeight: 'bold', textAlign: 'center', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '1.1rem' }}>
+                    Khergam
+                  </div>
                 </div>
                 {children}
               </main>
