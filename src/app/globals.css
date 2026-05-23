@@ -2446,6 +2446,18 @@ table.data-table {
     align-items: flex-start;
   }
 
+  .page-header > div {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .page-header .btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+
   .search-input {
     width: 100%;
   }
