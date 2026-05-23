@@ -122,3 +122,43 @@ export async function deleteCategory(id: string) {
     return { success: false, error: 'Failed to delete category' };
   }
 }
+
+export async function getStockReportData() {
+  try {
+    await requireAdmin();
+    const categories = await prisma.category.findMany({
+      where: { isActive: true },
+      include: {
+        items: {
+          where: { isActive: true },
+          orderBy: { name: 'asc' },
+        },
+      },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    // Calculate totals
+    let totalItems = 0;
+    let totalStock = 0;
+    let totalValue = 0;
+
+    categories.forEach((cat) => {
+      cat.items.forEach((item) => {
+        totalItems++;
+        totalStock += item.stock;
+        totalValue += item.sellingPrice * item.stock;
+      });
+    });
+
+    return {
+      success: true,
+      data: {
+        categories: JSON.parse(JSON.stringify(categories)),
+        totals: { totalItems, totalStock, totalValue },
+      },
+    };
+  } catch (error: any) {
+    console.error('Get stock report data error:', error);
+    return { success: false, error: error.message || 'Failed to fetch stock report data' };
+  }
+}
