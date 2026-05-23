@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 interface StockReportClientProps {
   categories: any[];
@@ -12,7 +12,6 @@ interface StockReportClientProps {
 }
 
 export default function StockReportClient({ categories, totals }: StockReportClientProps) {
-  const [downloading, setDownloading] = useState(false);
   useEffect(() => {
     // Auto-trigger print dialog after rendering
     const timer = setTimeout(() => {
@@ -29,50 +28,18 @@ export default function StockReportClient({ categories, totals }: StockReportCli
     minute: '2-digit',
   });
 
-  const handleDownloadPDF = async () => {
-    setDownloading(true);
-    try {
-      const element = document.getElementById('report-content');
-      if (!element) return;
-      
-      const html2pdf = (await import('html2pdf.js')).default;
-      
-      const opt = {
-        margin:       0.4,
-        filename:     `Gujarat_Mobile_Stock_Report_${new Date().toISOString().split('T')[0]}.pdf`,
-        image:        { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' as const }
-      };
-      
-      await html2pdf().set(opt).from(element).save();
-    } catch (error) {
-      console.error('Failed to generate PDF', error);
-      alert('Failed to generate PDF. You can still use the Print button to Save as PDF.');
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem', fontFamily: "'Inter', sans-serif" }}>
       {/* Print button (hidden in print) */}
       <div className="no-print" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
         <button
-          onClick={handleDownloadPDF}
+          onClick={() => window.print()}
           className="btn btn-primary"
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-          disabled={downloading}
         >
-          {downloading ? '⏳ Generating PDF...' : '📄 Download PDF'}
+          🖨️ Print Report
         </button>
-        <button
-          onClick={() => window.print()}
-          className="btn btn-secondary"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-        >
-          🖨️ Print
-        </button>
+
         <button
           onClick={() => window.history.back()}
           className="btn btn-secondary"
