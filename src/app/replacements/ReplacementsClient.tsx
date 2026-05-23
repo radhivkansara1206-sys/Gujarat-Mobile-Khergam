@@ -66,32 +66,63 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
         )}
       </div>
 
-      {/* Summary Cards */}
-      <div className="stats-grid stats-grid-3">
-        <div className="stat-card sales">
-          <div className="stat-card-header">
-            <span className="stat-card-label">Total Replacements</span>
-            <div className="stat-card-icon sales">🔄</div>
+      {/* Stock to Return to Dealer */}
+      <div style={{ background: 'linear-gradient(135deg, #ff6600, #e05500)', borderRadius: '12px', padding: '1.25rem 1.5rem', marginBottom: '1.5rem', color: 'white' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9 }}>📦 Total Defective Stock to Return to Dealer</p>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '2.25rem', fontWeight: 800 }}>{data.totalQuantity} units</p>
           </div>
-          <div className="stat-card-value">{data.totalCount}</div>
-        </div>
-        <div className="stat-card value">
-          <div className="stat-card-header">
-            <span className="stat-card-label">Total Units Replaced</span>
-            <div className="stat-card-icon value">📦</div>
-          </div>
-          <div className="stat-card-value">{data.totalQuantity}</div>
-        </div>
-        <div className="stat-card stock">
-          <div className="stat-card-header">
-            <span className="stat-card-label">Categories Affected</span>
-            <div className="stat-card-icon stock">📊</div>
-          </div>
-          <div className="stat-card-value">
-            {new Set(data.replacements.map((r: any) => r.item?.category?.name)).size}
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9 }}>From {data.totalCount} replacements</p>
           </div>
         </div>
       </div>
+
+      {/* Item-wise breakdown */}
+      {data.replacements.length > 0 && (
+        <div className="table-container" style={{ marginBottom: '1.5rem' }}>
+          <div className="table-header">
+            <h2 className="section-title">🏭 Item-wise Return Summary</h2>
+          </div>
+          <div className="table-responsive">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Category</th>
+                  <th>Units to Return</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.values(
+                  data.replacements.reduce((acc: any, r: any) => {
+                    const key = r.item?.id || r.itemId;
+                    if (!acc[key]) {
+                      acc[key] = {
+                        name: r.item?.name || 'Unknown',
+                        category: r.item?.category?.name || '',
+                        icon: r.item?.category?.icon || '📦',
+                        qty: 0,
+                      };
+                    }
+                    acc[key].qty += r.quantity;
+                    return acc;
+                  }, {})
+                )
+                  .sort((a: any, b: any) => b.qty - a.qty)
+                  .map((item: any, idx: number) => (
+                    <tr key={idx}>
+                      <td className="font-semibold">{item.name}</td>
+                      <td>{item.icon} {item.category}</td>
+                      <td><strong style={{ color: '#c2410c' }}>{item.qty}</strong></td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="filter-bar">
