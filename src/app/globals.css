@@ -2727,9 +2727,9 @@ table.data-table {
 
 /* ── Highlighted Row Effect ── */
 @keyframes highlightPulse {
-  0% { background-color: #e0f2fe; box-shadow: inset 4px 0 0 #0ea5e9; }
-  50% { background-color: #f0f9ff; box-shadow: inset 4px 0 0 #0ea5e9; }
-  100% { background-color: #e0f2fe; box-shadow: inset 4px 0 0 #0ea5e9; }
+  0% { background-color: #e0f2fe; }
+  50% { background-color: #f0f9ff; }
+  100% { background-color: #e0f2fe; }
 }
 
 tr.highlighted-row td {
