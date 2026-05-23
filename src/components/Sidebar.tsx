@@ -42,6 +42,13 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: '/replacements',
+    label: 'Replacements',
+    icon: (
+      <span style={{ fontSize: '1.25rem' }}>🔄</span>
+    ),
+  },
+  {
     href: '/alerts',
     label: 'Alerts',
     icon: (

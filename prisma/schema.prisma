@@ -118,3 +118,15 @@ model Expense {
   @@index([createdAt])
   @@index([userId])
 }
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String   // e.g., 'replacement'
+  message   String
+  isRead    Boolean  @default(false)
+  userId    String   // who triggered the action (staff)
+  createdAt DateTime @default(now())
+
+  @@index([isRead])
+  @@index([createdAt])
+}

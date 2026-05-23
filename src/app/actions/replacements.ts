@@ -18,6 +18,7 @@ export async function recordReplacement(data: {
 
     const item = await prisma.item.findUnique({
       where: { id: data.itemId },
+      include: { category: true },
     });
 
     if (!item) {
@@ -49,12 +50,22 @@ export async function recordReplacement(data: {
         },
       });
 
+      // Create admin notification
+      await tx.notification.create({
+        data: {
+          type: 'replacement',
+          message: `${session.name} replaced ${data.quantity}x ${item.name} (${item.category.name}) — Reason: ${data.reason || 'Defective item'}`,
+          userId: session.id,
+        },
+      });
+
       return newReplacement;
     });
 
     revalidatePath('/');
     revalidatePath('/inventory');
     revalidatePath('/sales');
+    revalidatePath('/replacements');
     revalidatePath(`/inventory/${item.categoryId}`);
 
     return { success: true, data: replacement };
@@ -64,12 +75,32 @@ export async function recordReplacement(data: {
   }
 }
 
-export async function getRecentReplacements(limit = 10) {
+export async function getReplacements(filters?: {
+  startDate?: string;
+  endDate?: string;
+  categoryId?: string;
+}) {
   try {
     await requireAuth();
 
+    const where: any = {};
+
+    if (filters?.startDate || filters?.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) where.createdAt.gte = new Date(filters.startDate);
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setDate(end.getDate() + 1);
+        where.createdAt.lt = end;
+      }
+    }
+
+    if (filters?.categoryId) {
+      where.item = { categoryId: filters.categoryId };
+    }
+
     const replacements = await prisma.replacement.findMany({
-      take: limit,
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         item: {
@@ -83,9 +114,62 @@ export async function getRecentReplacements(limit = 10) {
       },
     });
 
-    return { success: true, data: replacements };
+    const totalQuantity = replacements.reduce((sum, r) => sum + r.quantity, 0);
+
+    return {
+      success: true,
+      data: {
+        replacements,
+        totalCount: replacements.length,
+        totalQuantity,
+      },
+    };
   } catch (error: any) {
     console.error('Fetch replacements error:', error);
     return { error: error.message || 'Failed to fetch replacements' };
+  }
+}
+
+export async function getAdminNotifications() {
+  try {
+    const session = await requireAuth();
+    if (session.role !== 'admin') return { success: true, data: [] };
+
+    const notifications = await prisma.notification.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    return { success: true, data: notifications };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to fetch notifications' };
+  }
+}
+
+export async function markNotificationsRead() {
+  try {
+    const session = await requireAuth();
+    if (session.role !== 'admin') return { error: 'Unauthorized' };
+
+    await prisma.notification.updateMany({
+      where: { isRead: false },
+      data: { isRead: true },
+    });
+
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to mark notifications as read' };
+  }
+}
+
+export async function getUnreadNotificationCount() {
+  try {
+    const count = await prisma.notification.count({
+      where: { isRead: false },
+    });
+    return count;
+  } catch {
+    return 0;
   }
 }
