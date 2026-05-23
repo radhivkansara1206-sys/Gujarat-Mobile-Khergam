@@ -240,11 +240,12 @@ strong {
 .main-content {
   padding: 2rem;
   overflow-y: auto;
-  overflow-x: hidden;
   background-color: var(--bg-main);
   min-height: 100vh;
   width: 100%;
   margin-left: var(--sidebar-width);
+  box-sizing: border-box;
+  max-width: calc(100vw - var(--sidebar-width));
 }
 
 .page-header {
@@ -254,6 +255,12 @@ strong {
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+.page-header > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .page-title {
