@@ -2661,6 +2661,17 @@ table.data-table {
   gap: 1rem;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s ease;
+}
+.activity-item:hover {
+  background-color: #f8fafc;
+}
+.activity-item.highlight-replacement {
+  background-color: #fff7ed;
+  border-left: 4px solid #f59e0b;
+}
+.activity-item.highlight-replacement:hover {
+  background-color: #ffedd5;
 }
 .activity-item:last-child {
   border-bottom: none;
