@@ -2737,3 +2737,11 @@ tr.highlighted-row td {
   animation: highlightPulse 2s infinite;
   background-color: #e0f2fe !important;
 }
+
+/* ── Hide browser native password eye icon (Edge / IE) ── */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
