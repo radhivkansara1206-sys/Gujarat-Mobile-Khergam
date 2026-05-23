@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import Sidebar from '@/components/Sidebar';
 import { ToastProvider } from '@/components/Toast';
 import QuickStartGuide from '@/components/QuickStartGuide';
+import AutoLogout from '@/components/AutoLogout';
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/prisma';
@@ -72,6 +73,7 @@ export default async function RootLayout({
                 {children}
               </main>
               <QuickStartGuide />
+              <AutoLogout />
             </div>
           ) : (
             <>{children}</>

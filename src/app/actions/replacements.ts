@@ -173,3 +173,54 @@ export async function getUnreadNotificationCount() {
     return 0;
   }
 }
+
+export async function restoreReplacement(replacementId: string) {
+  try {
+    const session = await requireAuth();
+    if (session.role !== 'admin') return { error: 'Only admin can restore replacements' };
+
+    const result = await prisma.$transaction(async (tx) => {
+      const replacement = await tx.replacement.findUnique({
+        where: { id: replacementId },
+        include: { item: true },
+      });
+
+      if (!replacement) throw new Error('Replacement not found');
+
+      // Restore stock back to inventory
+      await tx.item.update({
+        where: { id: replacement.itemId },
+        data: { stock: { increment: replacement.quantity } },
+      });
+
+      // Delete the replacement record
+      await tx.replacement.delete({ where: { id: replacementId } });
+
+      return replacement;
+    });
+
+    revalidatePath('/');
+    revalidatePath('/inventory');
+    revalidatePath('/replacements');
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Restore replacement error:', error);
+    return { error: error.message || 'Failed to restore replacement' };
+  }
+}
+
+export async function deleteReplacement(replacementId: string) {
+  try {
+    const session = await requireAuth();
+    if (session.role !== 'admin') return { error: 'Only admin can delete replacements' };
+
+    await prisma.replacement.delete({ where: { id: replacementId } });
+
+    revalidatePath('/');
+    revalidatePath('/replacements');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Delete replacement error:', error);
+    return { error: error.message || 'Failed to delete replacement' };
+  }
+}

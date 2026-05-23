@@ -43,13 +43,18 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
           <p className="page-subtitle">Manage your stock by category</p>
         </div>
         {isAdmin && (
-          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Add Category
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <a href="/inventory/report" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none' }}>
+              🖨️ Print Report
+            </a>
+            <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add Category
+            </button>
+          </div>
         )}
       </div>
 

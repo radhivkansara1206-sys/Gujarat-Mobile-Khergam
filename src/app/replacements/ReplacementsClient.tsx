@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getReplacements, getAdminNotifications, markNotificationsRead } from '@/app/actions/replacements';
+import { getReplacements, getAdminNotifications, markNotificationsRead, restoreReplacement, deleteReplacement } from '@/app/actions/replacements';
 import { formatDateTime } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
 import BackButton from '@/components/BackButton';
@@ -25,6 +25,7 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -62,6 +63,32 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
       // Mark all as read
       await markNotificationsRead();
     }
+  }
+
+  async function handleRestore(id: string) {
+    if (!confirm('Restore this item back to inventory stock?')) return;
+    setActionLoading(id);
+    const result = await restoreReplacement(id);
+    if (result.success) {
+      showToast('Item restored to stock successfully');
+      handleFilter();
+    } else {
+      showToast(result.error || 'Failed to restore', 'error');
+    }
+    setActionLoading(null);
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Permanently delete this replacement record? Stock will NOT be restored.')) return;
+    setActionLoading(id);
+    const result = await deleteReplacement(id);
+    if (result.success) {
+      showToast('Replacement record deleted');
+      handleFilter();
+    } else {
+      showToast(result.error || 'Failed to delete', 'error');
+    }
+    setActionLoading(null);
   }
 
   return (
@@ -189,6 +216,7 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
                   <th>Qty</th>
                   <th>Reason</th>
                   <th>Logged By</th>
+                  {isAdmin && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -204,6 +232,28 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
                     <td><strong>{r.quantity}</strong></td>
                     <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.reason || '—'}</td>
                     <td>{r.user?.name || 'Unknown'}</td>
+                    {isAdmin && (
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          <button
+                            className="btn btn-sm"
+                            style={{ background: '#d1fae5', color: '#059669', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                            onClick={() => handleRestore(r.id)}
+                            disabled={actionLoading === r.id}
+                          >
+                            {actionLoading === r.id ? '...' : '↩ Restore'}
+                          </button>
+                          <button
+                            className="btn btn-sm"
+                            style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                            onClick={() => handleDelete(r.id)}
+                            disabled={actionLoading === r.id}
+                          >
+                            {actionLoading === r.id ? '...' : '🗑 Delete'}
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

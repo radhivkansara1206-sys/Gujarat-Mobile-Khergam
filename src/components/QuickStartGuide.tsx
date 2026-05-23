@@ -87,7 +87,7 @@ export default function QuickStartGuide() {
     }}>
       <div style={{
         background: '#ffffff', borderRadius: '24px', width: '100%', maxWidth: '480px',
-        overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
         position: 'relative'
       }}>
         
