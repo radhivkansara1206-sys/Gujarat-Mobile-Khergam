@@ -214,34 +214,44 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
 
       {/* Notifications Panel */}
       {showNotifications && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.7)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}
           onClick={() => setShowNotifications(false)}
         >
-          <div style={{ background: 'var(--card-bg)', borderRadius: '12px', width: '100%', maxWidth: '500px', maxHeight: '80vh', overflow: 'auto', padding: '1.5rem', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
+          <div style={{ background: '#ffffff', borderRadius: '16px', width: '100%', maxWidth: '500px', maxHeight: '80vh', overflow: 'auto', padding: '1.5rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>🔔 Staff Replacement Alerts</h2>
-              <button onClick={() => setShowNotifications(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>×</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ background: '#fef3c7', color: '#f59e0b', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+                  🔔
+                </div>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>Staff Alerts</h2>
+              </div>
+              <button onClick={() => setShowNotifications(false)} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s' }}>×</button>
             </div>
             {notifications.length === 0 ? (
-              <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem 0' }}>No alerts yet. Alerts will appear here when staff logs a replacement.</p>
+              <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>✅</div>
+                <p style={{ color: '#64748b', margin: 0, fontWeight: 500 }}>You're all caught up!</p>
+                <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.25rem' }}>No new replacement alerts.</p>
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {notifications.map((n: any) => (
                   <div key={n.id} style={{
-                    padding: '0.75rem 1rem',
-                    borderRadius: '8px',
-                    background: n.isRead ? 'var(--bg-color)' : '#fff7ed',
-                    border: `1px solid ${n.isRead ? 'var(--border)' : '#fed7aa'}`,
+                    padding: '1rem',
+                    borderRadius: '12px',
+                    background: n.isRead ? '#f8fafc' : '#fff7ed',
+                    border: `1px solid ${n.isRead ? '#e2e8f0' : '#fed7aa'}`,
+                    transition: 'transform 0.2s',
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                      <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.5 }}>
-                        {!n.isRead && <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', marginRight: '0.5rem' }}></span>}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
+                      <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.5, color: '#334155' }}>
+                        {!n.isRead && <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', marginRight: '0.5rem', boxShadow: '0 0 0 4px #fee2e2' }}></span>}
                         {n.message}
                       </p>
                     </div>
-                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>
                       {formatDateTime(n.createdAt)}
                     </p>
                   </div>
