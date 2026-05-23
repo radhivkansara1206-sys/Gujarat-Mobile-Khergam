@@ -14,9 +14,10 @@ interface ReplacementsClientProps {
   };
   categories: { id: string; name: string }[];
   isAdmin: boolean;
+  initialUnreadCount: number;
 }
 
-export default function ReplacementsClient({ initialData, categories, isAdmin }: ReplacementsClientProps) {
+export default function ReplacementsClient({ initialData, categories, isAdmin, initialUnreadCount }: ReplacementsClientProps) {
   const [data, setData] = useState(initialData);
   const [filterLoading, setFilterLoading] = useState(false);
   const [startDate, setStartDate] = useState('');
@@ -26,6 +27,7 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
     if (result.data) {
       setNotifications(result.data);
       setShowNotifications(true);
+      setUnreadCount(0); // Disappear once seen
       // Mark all as read
       await markNotificationsRead();
     }
@@ -100,13 +103,33 @@ export default function ReplacementsClient({ initialData, categories, isAdmin }:
           <p className="page-subtitle">Track all defective item replacements</p>
         </div>
         {isAdmin && (
-          <button className="btn btn-primary" onClick={handleViewNotifications}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            Staff Alerts
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {unreadCount > 0 && (
+              <button 
+                onClick={async () => {
+                  setUnreadCount(0);
+                  await markNotificationsRead();
+                  showToast('Alerts dismissed');
+                }}
+                className="btn btn-secondary btn-sm"
+                style={{ padding: '0.4rem 0.6rem', fontSize: '0.75rem', color: '#64748b' }}
+              >
+                Dismiss
+              </button>
+            )}
+            <button className="btn btn-primary" onClick={handleViewNotifications} style={{ position: 'relative' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              Staff Alerts
+              {unreadCount > 0 && (
+                <span className="notification-badge" style={{ position: 'absolute', top: '-8px', right: '-8px', animation: 'pulse 1.5s infinite', border: '2px solid white' }}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+          </div>
         )}
       </div>
 
