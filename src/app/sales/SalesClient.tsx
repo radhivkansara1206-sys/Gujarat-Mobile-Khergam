@@ -369,8 +369,8 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
 
           {paymentType === 'gift' && (
             <div className="form-group">
-              <label className="form-label">Bill Number (Optional)</label>
-              <input name="notes" className="form-input" placeholder="Enter bill number" />
+              <label className="form-label">Bill Number *</label>
+              <input name="notes" className="form-input" placeholder="Enter bill number" required />
             </div>
           )}
 
