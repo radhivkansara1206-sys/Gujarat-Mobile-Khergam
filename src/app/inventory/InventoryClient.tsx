@@ -47,119 +47,222 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
 
       const { categories: reportCategories, totals } = result.data;
 
+      // Use jsPDF directly — no html2canvas, no DOM screenshot, always works
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+      const pageW = 210;
+      const margin = 15;
+      const contentW = pageW - margin * 2;
+      let y = margin;
+
       const nowStr = new Date().toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
       });
 
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.top = '0';
-      tempDiv.style.left = '0';
-      tempDiv.style.width = '850px';
-      tempDiv.style.zIndex = '-9999';
-      tempDiv.style.pointerEvents = 'none';
-      tempDiv.style.background = 'white';
-      tempDiv.style.padding = '2rem';
-      tempDiv.style.fontFamily = "'Inter', sans-serif";
-      tempDiv.style.color = '#0f172a';
+      // ── Header ──────────────────────────────────────────────────────
+      doc.setFillColor(255, 102, 0);
+      doc.rect(margin, y, contentW, 1, 'F');
+      y += 4;
 
-      tempDiv.innerHTML = `
-        <div style="text-align: center; margin-bottom: 2rem; border-bottom: 3px solid #ff6600; padding-bottom: 1.5rem;">
-          <h1 style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0 0 0.25rem 0;">
-            Gujarat Mobile Khergam
-          </h1>
-          <p style="margin: 0 0 0.5rem 0; color: #64748b; font-size: 0.9rem;">Inventory Stock Report</p>
-          <p style="margin: 0; color: #94a3b8; font-size: 0.8rem;">Generated on: ${nowStr}</p>
-        </div>
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Gujarat Mobile Khergam', pageW / 2, y, { align: 'center' });
+      y += 7;
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; background: #f8fafc; border-radius: 12px; padding: 1.25rem; border: 1px solid #e2e8f0;">
-          <div style="text-align: center;">
-            <p style="margin: 0; font-size: 0.8rem; color: #64748b; font-weight: 500;">Total Items</p>
-            <p style="margin: 0.25rem 0 0 0; font-size: 1.75rem; font-weight: 800; color: #0f172a;">${totals.totalItems}</p>
-          </div>
-          <div style="text-align: center;">
-            <p style="margin: 0; font-size: 0.8rem; color: #64748b; font-weight: 500;">Total Stock</p>
-            <p style="margin: 0.25rem 0 0 0; font-size: 1.75rem; font-weight: 800; color: #0f172a;">${totals.totalStock} units</p>
-          </div>
-          <div style="text-align: center;">
-            <p style="margin: 0; font-size: 0.8rem; color: #64748b; font-weight: 500;">Inventory Value</p>
-            <p style="margin: 0.25rem 0 0 0; font-size: 1.75rem; font-weight: 800; color: #10b981;">₹${totals.totalValue.toLocaleString('en-IN')}</p>
-          </div>
-        </div>
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Inventory Stock Report', pageW / 2, y, { align: 'center' });
+      y += 5;
+      doc.setFontSize(8);
+      doc.text(`Generated on: ${nowStr}`, pageW / 2, y, { align: 'center' });
+      y += 4;
 
-        ${reportCategories.map((category: any) => `
-          <div style="margin-bottom: 2rem; page-break-inside: avoid;">
-            <h2 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; border-bottom: 2px solid ${category.color || '#ff6600'}; padding-bottom: 0.5rem; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
-              <span>${category.icon || '📦'} ${category.name}</span>
-              <span style="font-size: 0.8rem; font-weight: 500; color: #64748b;">
-                ${(category.items || []).length} items
-              </span>
-            </h2>
+      doc.setDrawColor(226, 232, 240);
+      doc.line(margin, y, margin + contentW, y);
+      y += 6;
 
-            ${(category.items || []).length === 0 ? `
-              <p style="color: #94a3b8; font-size: 0.85rem; font-style: italic; margin: 0.5rem 0;">No items in this category</p>
-            ` : `
-              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-                <thead>
-                  <tr style="background: #f1f5f9;">
-                    <th style="text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">#</th>
-                    <th style="text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Item Name</th>
-                    <th style="text-align: right; padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Selling Price</th>
-                    <th style="text-align: right; padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Stock</th>
-                    <th style="text-align: center; padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${(category.items || []).map((item: any, idx: number) => {
-                    const isLow = item.stock > 0 && item.stock <= item.lowStockThreshold;
-                    const isOut = item.stock <= 0;
-                    return `
-                      <tr style="border-bottom: 1px solid #f1f5f9;">
-                        <td style="padding: 0.5rem 0.75rem; color: #94a3b8;">${idx + 1}</td>
-                        <td style="padding: 0.5rem 0.75rem; font-weight: 500; color: #0f172a;">${item.name}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: right; color: #475569;">₹${item.sellingPrice.toLocaleString('en-IN')}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: right; font-weight: 700; color: ${isOut ? '#dc2626' : isLow ? '#d97706' : '#0f172a'};">${item.stock}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: center;">
-                          ${isOut ? `
-                            <span style="display: inline-block; background: #fee2e2; color: #dc2626; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600;">Out of Stock</span>
-                          ` : isLow ? `
-                            <span style="display: inline-block; background: #fef3c7; color: #d97706; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600;">Low Stock</span>
-                          ` : `
-                            <span style="display: inline-block; background: #d1fae5; color: #059669; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600;">In Stock</span>
-                          `}
-                        </td>
-                      </tr>
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
-            `}
-          </div>
-        `).join('')}
+      // ── Summary Box ──────────────────────────────────────────────────
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(margin, y, contentW, 20, 3, 3, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(margin, y, contentW, 20, 3, 3, 'S');
 
-        <div style="text-align: center; padding-top: 1.5rem; border-top: 2px solid #e2e8f0; color: #94a3b8; font-size: 0.75rem; margin-top: 2rem;">
-          <p style="margin: 0;">Gujarat Mobile Khergam — Stock Report</p>
-          <p style="margin: 0.25rem 0 0 0;">Developer: Radhiv Kansara | 📞 6354184700</p>
-        </div>
-      `;
+      const col = contentW / 3;
+      const summaryItems = [
+        { label: 'Total Items', value: String(totals.totalItems) },
+        { label: 'Total Stock', value: `${totals.totalStock} units` },
+        { label: 'Inventory Value', value: `Rs.${totals.totalValue.toLocaleString('en-IN')}` },
+      ];
+      summaryItems.forEach((s, i) => {
+        const cx = margin + col * i + col / 2;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(s.label, cx, y + 7, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(i === 2 ? 16 : 15, i === 2 ? 185 : 23, i === 2 ? 129 : 42);
+        doc.text(s.value, cx, y + 16, { align: 'center' });
+      });
+      y += 26;
 
-      document.body.appendChild(tempDiv);
+      // ── Category Tables ───────────────────────────────────────────────
+      for (const category of reportCategories) {
+        const items: any[] = category.items || [];
+        const rowH = 7;
+        const tableH = 10 + (items.length === 0 ? 8 : items.length * rowH + 8);
 
-      const html2pdf = (await import('html2pdf.js')).default;
-      const opt = {
-        margin:       0.4,
-        filename:     `Gujarat_Mobile_Stock_Report_${new Date().toISOString().split('T')[0]}.pdf`,
-        image:        { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 850 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' as const }
-      };
+        if (y + tableH > 280) {
+          doc.addPage();
+          y = margin;
+        }
 
-      await html2pdf().set(opt).from(tempDiv).save();
-      document.body.removeChild(tempDiv);
+        // Category heading
+        const hexToRgb = (hex: string) => {
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return { r, g, b };
+        };
+        const catColor = hexToRgb(category.color || '#ff6600');
+        doc.setDrawColor(catColor.r, catColor.g, catColor.b);
+        doc.setLineWidth(0.6);
+        doc.line(margin, y + 5, margin + contentW, y + 5);
+        doc.setLineWidth(0.2);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`${category.name}`, margin, y + 4);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`${items.length} items`, margin + contentW, y + 4, { align: 'right' });
+        y += 9;
+
+        if (items.length === 0) {
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(8);
+          doc.setTextColor(148, 163, 184);
+          doc.text('No items in this category', margin, y + 4);
+          y += 10;
+          continue;
+        }
+
+        // Table header
+        const cols = [
+          { label: '#',            x: margin,           w: 8,  align: 'left' as const },
+          { label: 'Item Name',    x: margin + 8,       w: 72, align: 'left' as const },
+          { label: 'Price (Rs.)',  x: margin + 80,      w: 35, align: 'right' as const },
+          { label: 'Stock',        x: margin + 115,     w: 25, align: 'right' as const },
+          { label: 'Status',       x: margin + 140,     w: 35, align: 'center' as const },
+        ];
+
+        doc.setFillColor(241, 245, 249);
+        doc.rect(margin, y, contentW, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(71, 85, 105);
+        cols.forEach(col => {
+          const tx = col.align === 'right'
+            ? col.x + col.w
+            : col.align === 'center'
+              ? col.x + col.w / 2
+              : col.x;
+          doc.text(col.label, tx, y + 4.8, { align: col.align });
+        });
+        y += 7;
+
+        // Table rows
+        items.forEach((item: any, idx: number) => {
+          if (y + rowH > 285) {
+            doc.addPage();
+            y = margin;
+          }
+
+          const isLow = item.stock > 0 && item.stock <= item.lowStockThreshold;
+          const isOut = item.stock <= 0;
+
+          // Alternating row bg
+          if (idx % 2 === 0) {
+            doc.setFillColor(249, 250, 251);
+            doc.rect(margin, y, contentW, rowH, 'F');
+          }
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.5);
+
+          // #
+          doc.setTextColor(148, 163, 184);
+          doc.text(String(idx + 1), cols[0].x, y + 4.8);
+
+          // Name
+          doc.setTextColor(15, 23, 42);
+          const name = item.name.length > 38 ? item.name.slice(0, 36) + '…' : item.name;
+          doc.text(name, cols[1].x, y + 4.8);
+
+          // Price
+          doc.setTextColor(71, 85, 105);
+          doc.text(item.sellingPrice.toLocaleString('en-IN'), cols[2].x + cols[2].w, y + 4.8, { align: 'right' });
+
+          // Stock
+          if (isOut) doc.setTextColor(220, 38, 38);
+          else if (isLow) doc.setTextColor(217, 119, 6);
+          else doc.setTextColor(15, 23, 42);
+          doc.setFont('helvetica', 'bold');
+          doc.text(String(item.stock), cols[3].x + cols[3].w, y + 4.8, { align: 'right' });
+
+          // Status badge
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6.5);
+          const badgeCx = cols[4].x + cols[4].w / 2;
+          const badgeW = 18;
+          const badgeH = 4;
+          const badgeY = y + 1.5;
+          if (isOut) {
+            doc.setFillColor(254, 226, 226);
+            doc.roundedRect(badgeCx - badgeW / 2, badgeY, badgeW, badgeH, 1, 1, 'F');
+            doc.setTextColor(220, 38, 38);
+            doc.text('Out of Stock', badgeCx, badgeY + 2.8, { align: 'center' });
+          } else if (isLow) {
+            doc.setFillColor(254, 243, 199);
+            doc.roundedRect(badgeCx - badgeW / 2, badgeY, badgeW, badgeH, 1, 1, 'F');
+            doc.setTextColor(217, 119, 6);
+            doc.text('Low Stock', badgeCx, badgeY + 2.8, { align: 'center' });
+          } else {
+            doc.setFillColor(209, 250, 229);
+            doc.roundedRect(badgeCx - badgeW / 2, badgeY, badgeW, badgeH, 1, 1, 'F');
+            doc.setTextColor(5, 150, 105);
+            doc.text('In Stock', badgeCx, badgeY + 2.8, { align: 'center' });
+          }
+
+          // Row separator
+          doc.setDrawColor(241, 245, 249);
+          doc.line(margin, y + rowH, margin + contentW, y + rowH);
+          y += rowH;
+        });
+
+        y += 5;
+      }
+
+      // ── Footer ───────────────────────────────────────────────────────
+      const totalPages = (doc as any).internal.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, 287, margin + contentW, 287);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184);
+        doc.text('Gujarat Mobile Khergam — Stock Report', margin, 292);
+        doc.text(`Page ${p} of ${totalPages}`, margin + contentW, 292, { align: 'right' });
+      }
+
+      doc.save(`Gujarat_Mobile_Stock_Report_${new Date().toISOString().split('T')[0]}.pdf`);
       showToast('Stock Report PDF downloaded successfully');
     } catch (error) {
       console.error('Failed to generate PDF', error);
