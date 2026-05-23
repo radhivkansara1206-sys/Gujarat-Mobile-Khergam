@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Modal from '@/components/Modal';
 import { recordSale, getSales, deleteSale } from '@/app/actions/sales';
+import { recordReplacement } from '@/app/actions/replacements';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
@@ -32,6 +33,7 @@ interface SalesClientProps {
 export default function SalesClient({ initialSales, categories, items, isAdmin }: SalesClientProps) {
   const [salesData, setSalesData] = useState(initialSales);
   const [showModal, setShowModal] = useState(false);
+  const [showReplacementModal, setShowReplacementModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filterLoading, setFilterLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -67,6 +69,27 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
       if (refreshed.data) setSalesData(refreshed.data);
     } else {
       showToast(result.error || 'Failed to record sale', 'error');
+    }
+    setLoading(false);
+  }
+
+  async function handleRecordReplacement(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const result = await recordReplacement({
+      itemId: formData.get('itemId') as string,
+      quantity: Number(formData.get('quantity')),
+      reason: formData.get('reason') as string,
+    });
+    if (result.success) {
+      showToast('Replacement recorded successfully! Stock updated.');
+      setShowReplacementModal(false);
+      setSelectedItem(null);
+      setQuantity(1);
+      router.refresh();
+    } else {
+      showToast(result.error || 'Failed to record replacement', 'error');
     }
     setLoading(false);
   }
@@ -110,13 +133,22 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
           <h1 className="page-title">Sales</h1>
           <p className="page-subtitle">Record and track all sales transactions</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Record Sale
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn btn-secondary" onClick={() => setShowReplacementModal(true)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            Log Replacement
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Record Sale
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -353,6 +385,72 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
             <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={loading || !selectedItem}>
               {loading ? <><span className="spinner"></span> Recording...</> : paymentType === 'gift' ? 'Record Gift' : `Record Sale • ${formatCurrency(total)}`}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Replacement Modal */}
+      <Modal isOpen={showReplacementModal} onClose={() => setShowReplacementModal(false)} title="Log Defective Replacement">
+        <form onSubmit={handleRecordReplacement}>
+          <div className="form-group">
+            <label className="form-label">Select Item *</label>
+            <select
+              name="itemId"
+              className="form-input"
+              value={selectedItem || ''}
+              onChange={(e) => setSelectedItem(e.target.value)}
+              required
+            >
+              <option value="">-- Choose Item --</option>
+              {groupedItems.map((group) => (
+                <optgroup key={group.category} label={group.category}>
+                  {group.items.map((item) => (
+                    <option key={item.id} value={item.id} disabled={item.stock <= 0}>
+                      {item.name} ({item.stock > 0 ? `${item.stock} in stock` : 'Out of stock'})
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          {selectedItemData && (
+            <div style={{ padding: '0.75rem', background: 'var(--bg-color)', borderRadius: '6px', marginBottom: '1rem', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                <span className="text-secondary">Current Stock:</span>
+                <strong>{selectedItemData.stock} units</strong>
+              </div>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label className="form-label">Quantity to Replace *</label>
+            <input
+              name="quantity"
+              type="number"
+              className="form-input"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              min="1"
+              max={selectedItemData?.stock || 1}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Reason / Notes</label>
+            <input
+              name="reason"
+              className="form-input"
+              placeholder="e.g. Broken display, returned to manufacturer"
+            />
+          </div>
+
+          <div className="modal-actions">
+            <button type="button" className="btn btn-secondary" onClick={() => setShowReplacementModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={loading || !selectedItem}>
+              {loading ? <><span className="spinner"></span> Saving...</> : 'Log Replacement'}
             </button>
           </div>
         </form>

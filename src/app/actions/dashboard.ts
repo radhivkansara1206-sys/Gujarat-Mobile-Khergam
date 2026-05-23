@@ -77,7 +77,16 @@ export async function getRecentActivity() {
 
     // We don't query the separate Gift table anymore, as gifts are now recorded as Sales with paymentType = 'gift'
 
-    const activities = recentSales.map(s => ({
+    const recentReplacements = await prisma.replacement.findMany({
+      take: 15,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        item: { select: { name: true, category: { select: { name: true, icon: true } } } },
+        user: { select: { name: true } },
+      },
+    });
+
+    const salesMapped = recentSales.map(s => ({
       id: s.id,
       type: s.paymentType === 'gift' ? 'gift' as const : 'sale' as const,
       itemName: s.item.name,
@@ -90,6 +99,24 @@ export async function getRecentActivity() {
       recipientName: s.notes, // We use notes to store recipient name/reason for gifts
       createdAt: s.createdAt,
     }));
+
+    const replacementsMapped = recentReplacements.map(r => ({
+      id: r.id,
+      type: 'replacement' as const,
+      itemName: r.item.name,
+      categoryName: r.item.category.name,
+      categoryIcon: r.item.category.icon,
+      quantity: r.quantity,
+      amount: 0,
+      paymentType: null,
+      userName: r.user.name,
+      recipientName: r.reason,
+      createdAt: r.createdAt,
+    }));
+
+    const activities = [...salesMapped, ...replacementsMapped]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 15);
 
     return { success: true, data: activities };
   } catch (error) {

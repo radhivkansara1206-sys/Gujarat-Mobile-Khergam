@@ -2631,6 +2631,10 @@ table.data-table {
   background-color: #fce7f3;
   color: #db2777;
 }
+.activity-icon.replacement {
+  background-color: #ffedd5;
+  color: #c2410c;
+}
 
 .activity-item {
   display: flex;

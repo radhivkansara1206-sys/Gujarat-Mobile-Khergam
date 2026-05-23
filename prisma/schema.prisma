@@ -18,6 +18,7 @@ model User {
   sales     Sale[]
   gifts     Gift[]
   expenses  Expense[]
+  replacements Replacement[]
 }
 
 model Category {
@@ -47,6 +48,7 @@ model Item {
   category          Category @relation(fields: [categoryId], references: [id])
   sales             Sale[]
   gifts             Gift[]
+  replacements      Replacement[]
 
   @@index([categoryId])
   @@index([isActive])
@@ -78,6 +80,21 @@ model Gift {
   userId        String
   quantity      Int
   recipientName String?  @default("")
+  reason        String?  @default("")
+  createdAt     DateTime @default(now())
+  item          Item     @relation(fields: [itemId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([itemId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Replacement {
+  id            String   @id @default(uuid())
+  itemId        String
+  userId        String
+  quantity      Int
   reason        String?  @default("")
   createdAt     DateTime @default(now())
   item          Item     @relation(fields: [itemId], references: [id])

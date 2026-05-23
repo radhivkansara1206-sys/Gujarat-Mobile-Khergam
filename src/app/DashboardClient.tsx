@@ -122,9 +122,11 @@ export default function DashboardClient({
             ) : (
               activities.map((activity: any) => (
                 <div key={activity.id} className="activity-item">
-                  <div className={`activity-icon ${activity.type === 'sale' ? activity.paymentType : 'gift'}`}>
+                  <div className={`activity-icon ${activity.type === 'sale' ? activity.paymentType : (activity.type === 'replacement' ? 'replacement' : 'gift')}`}>
                     {activity.type === 'sale' ? (
                       activity.paymentType === 'cash' ? '₹' : '📱'
+                    ) : activity.type === 'replacement' ? (
+                      '🔄'
                     ) : (
                       '🎁'
                     )}
@@ -137,6 +139,8 @@ export default function DashboardClient({
                     <span className="activity-meta">
                       {activity.type === 'sale'
                         ? `${formatCurrency(activity.amount)} · ${activity.paymentType}`
+                        : activity.type === 'replacement'
+                        ? `Replacement${activity.recipientName ? ` - ${activity.recipientName}` : ''}`
                         : `Gift${activity.recipientName ? ` to ${activity.recipientName}` : ''}`
                       }
                       {' · '}{activity.userName}
