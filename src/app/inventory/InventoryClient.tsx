@@ -110,48 +110,41 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
       });
       y += 26;
 
-      // ── Category Tables ───────────────────────────────────────────────
+      // ── Category Tables ── (skip empty categories) ──────────────────
+      const hexToRgb = (hex: string) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return { r, g, b };
+      };
+
       for (const category of reportCategories) {
         const items: any[] = category.items || [];
-        const rowH = 7;
-        const tableH = 10 + (items.length === 0 ? 8 : items.length * rowH + 8);
+        // Skip categories that have no items
+        if (items.length === 0) continue;
 
-        if (y + tableH > 280) {
+        const rowH = 7;
+        const tableH = 12 + items.length * rowH + 8;
+
+        if (y + tableH > 278) {
           doc.addPage();
           y = margin;
         }
 
-        // Category heading
-        const hexToRgb = (hex: string) => {
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
-          return { r, g, b };
-        };
+        // Category heading with colored underline
         const catColor = hexToRgb(category.color || '#ff6600');
-        doc.setDrawColor(catColor.r, catColor.g, catColor.b);
-        doc.setLineWidth(0.6);
-        doc.line(margin, y + 5, margin + contentW, y + 5);
-        doc.setLineWidth(0.2);
+        doc.setFillColor(catColor.r, catColor.g, catColor.b);
+        doc.rect(margin, y + 6, contentW, 0.8, 'F');
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.setTextColor(15, 23, 42);
-        doc.text(`${category.name}`, margin, y + 4);
+        doc.text(category.name, margin, y + 5);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(100, 116, 139);
-        doc.text(`${items.length} items`, margin + contentW, y + 4, { align: 'right' });
-        y += 9;
-
-        if (items.length === 0) {
-          doc.setFont('helvetica', 'italic');
-          doc.setFontSize(8);
-          doc.setTextColor(148, 163, 184);
-          doc.text('No items in this category', margin, y + 4);
-          y += 10;
-          continue;
-        }
+        doc.text(`${items.length} items`, margin + contentW, y + 5, { align: 'right' });
+        y += 10;
 
         // Table header
         const cols = [
