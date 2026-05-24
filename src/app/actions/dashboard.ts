@@ -186,6 +186,23 @@ export async function getDailySummaryAction(dateStr: string) {
     });
     const totalReplacements = replacements.reduce((sum, r) => sum + r.quantity, 0);
 
+    // Group items sold
+    const itemsSoldMap = new Map<string, { quantity: number; amount: number }>();
+    sales.forEach((s) => {
+      if (s.paymentType === 'gift') return;
+      const current = itemsSoldMap.get(s.item.name) || { quantity: 0, amount: 0 };
+      itemsSoldMap.set(s.item.name, {
+        quantity: current.quantity + s.quantity,
+        amount: current.amount + s.totalAmount,
+      });
+    });
+
+    const itemsSold = Array.from(itemsSoldMap.entries()).map(([name, data]) => ({
+      name,
+      quantity: data.quantity,
+      amount: data.amount,
+    }));
+
     return {
       success: true,
       data: {
@@ -198,6 +215,7 @@ export async function getDailySummaryAction(dateStr: string) {
         salesCount: sales.filter(s => s.paymentType !== 'gift').length,
         expensesCount: expenses.length,
         closedBy: session.name,
+        itemsSold,
       },
     };
   } catch (error: any) {

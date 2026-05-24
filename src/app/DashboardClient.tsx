@@ -59,6 +59,15 @@ export default function DashboardClient({
       year: 'numeric'
     });
 
+    let itemsSoldText = '';
+    if (summaryData.itemsSold && summaryData.itemsSold.length > 0) {
+      itemsSoldText = `\n📦 *ITEMS SOLD TODAY*\n` + 
+        summaryData.itemsSold.map((item: any) => `• ${item.name} × ${item.quantity} (${formatCurrency(item.amount)})`).join('\n') + 
+        `\n`;
+    } else {
+      itemsSoldText = `\n📦 *ITEMS SOLD TODAY*\n• No items sold today.\n`;
+    }
+
     const message = `📱 *GUJARAT MOBILE KHERGAM*
 📊 *Daily Business Summary*
 📅 *Date:* ${formattedDate}
@@ -68,7 +77,7 @@ export default function DashboardClient({
 • Cash Sales: ${formatCurrency(summaryData.salesCash)}
 • Online Sales: ${formatCurrency(summaryData.salesOnline)}
 • *Total Sales:* ${formatCurrency(summaryData.salesTotal)} (${summaryData.salesCount} bills)
-
+${itemsSoldText}
 💸 *EXPENSES*
 • Total Expenses: ${formatCurrency(summaryData.totalExpenses)} (${summaryData.expensesCount} records)
 
@@ -84,7 +93,7 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
 
 👤 *Closed By:* ${summaryData.closedBy}`;
 
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    const url = `https://api.whatsapp.com/send?phone=916354184700&text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
     showToast('Daily Summary report generated and opening in WhatsApp!');
     setShowClosingModal(false);
@@ -304,6 +313,25 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                     {formatCurrency(summaryData.salesTotal - summaryData.totalExpenses)}
                   </p>
                 </div>
+              </div>
+
+              {/* Items Sold Today List */}
+              <div style={{ marginBottom: '1.25rem', padding: '1rem', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '12px' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span>📦</span> Items Sold Today
+                </p>
+                {summaryData.itemsSold && summaryData.itemsSold.length > 0 ? (
+                  <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {summaryData.itemsSold.map((item: any, idx: number) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{item.name} <span style={{ color: 'var(--text-muted)' }}>× {item.quantity}</span></span>
+                        <span>{formatCurrency(item.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No items sold today.</p>
+                )}
               </div>
 
               {/* Replacements Info */}
