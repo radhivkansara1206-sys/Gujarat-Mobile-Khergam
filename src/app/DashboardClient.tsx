@@ -28,6 +28,7 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const [showClosingModal, setShowClosingModal] = useState(false);
   const [closingDate, setClosingDate] = useState(new Date().toISOString().split('T')[0]);
+  const [recipientPhone, setRecipientPhone] = useState('919427487277');
   const [summaryData, setSummaryData] = useState<any>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [notes, setNotes] = useState('');
@@ -93,7 +94,7 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
 
 👤 *Closed By:* ${summaryData.closedBy}`;
 
-    const url = `https://api.whatsapp.com/send?phone=916354184700&text=${encodeURIComponent(message)}`;
+    const url = `https://api.whatsapp.com/send?phone=${recipientPhone}&text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
     showToast('Daily Summary report generated and opening in WhatsApp!');
     setShowClosingModal(false);
@@ -274,16 +275,31 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
 
       <Modal isOpen={showClosingModal} onClose={() => setShowClosingModal(false)} title="📊 Daily Business Summary" size="md">
         <div style={{ padding: '0.25rem' }}>
-          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-            <label className="form-label" htmlFor="closing-date">Select Summary Date</label>
-            <input 
-              id="closing-date"
-              type="date" 
-              className="form-input" 
-              value={closingDate} 
-              max={new Date().toISOString().split('T')[0]}
-              onChange={(e) => setClosingDate(e.target.value)} 
-            />
+          <div className="form-row" style={{ marginBottom: '1.25rem' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" htmlFor="closing-date">Select Summary Date</label>
+              <input 
+                id="closing-date"
+                type="date" 
+                className="form-input" 
+                value={closingDate} 
+                max={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setClosingDate(e.target.value)} 
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" htmlFor="recipient-phone">Send WhatsApp Report To</label>
+              <select 
+                id="recipient-phone"
+                className="form-select"
+                value={recipientPhone}
+                onChange={(e) => setRecipientPhone(e.target.value)}
+              >
+                <option value="919427487277">📞 9427487277</option>
+                <option value="919925300367">📞 9925300367</option>
+                <option value="919727353200">📞 97273 53200</option>
+              </select>
+            </div>
           </div>
 
           {loadingSummary ? (
