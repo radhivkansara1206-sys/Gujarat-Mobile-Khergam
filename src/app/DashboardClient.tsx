@@ -104,15 +104,6 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
       window.open(url, '_blank');
       showToast('Daily Summary report generated! Select your WhatsApp Group / Contact next.');
-    } else if (recipientPhone === 'all') {
-      const numbers = ['919427487277', '919925300367', '919727353200'];
-      numbers.forEach((num, idx) => {
-        const url = `https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(message)}`;
-        setTimeout(() => {
-          window.open(url, '_blank');
-        }, idx * 400);
-      });
-      showToast('Daily Summary reports generated for all owners!');
     } else {
       const url = `https://api.whatsapp.com/send?phone=${recipientPhone}&text=${encodeURIComponent(message)}`;
       window.open(url, '_blank');
@@ -318,7 +309,6 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                 onChange={(e) => setRecipientPhone(e.target.value)}
               >
                 <option value="group">👥 Share to Group / Contact Selector</option>
-                <option value="all">👥 Send to All Owners (one-by-one)</option>
                 <option value="919427487277">📞 9427487277 (Owner 1)</option>
                 <option value="919925300367">📞 9925300367 (Owner 2)</option>
                 <option value="919727353200">📞 97273 53200 (Owner 3)</option>
@@ -382,26 +372,7 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                 </div>
               )}
 
-              {/* Pop-up blocker helper for Send to All */}
-              {recipientPhone === 'all' && (
-                <div style={{ padding: '0.75rem 1rem', background: 'var(--info-light)', border: '1px solid var(--info)', borderRadius: '12px', fontSize: '0.825rem', color: 'var(--info-dark)', marginBottom: '1.25rem' }}>
-                  <p style={{ margin: 0, fontWeight: 600, marginBottom: '0.35rem' }}>📣 Pop-up Blocker Note</p>
-                  <p style={{ margin: 0, opacity: 0.9, lineHeight: '1.4', marginBottom: '0.5rem' }}>
-                    If your browser blocks the tabs, click <strong>"Always allow pop-ups"</strong> in the browser bar, or use the links below to send manually:
-                  </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <button type="button" onClick={() => window.open(`https://api.whatsapp.com/send?phone=919427487277&text=${encodeURIComponent(handleBuildMessage())}`, '_blank')} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
-                      👤 Send to 9427487277
-                    </button>
-                    <button type="button" onClick={() => window.open(`https://api.whatsapp.com/send?phone=919925300367&text=${encodeURIComponent(handleBuildMessage())}`, '_blank')} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
-                      👤 Send to 9925300367
-                    </button>
-                    <button type="button" onClick={() => window.open(`https://api.whatsapp.com/send?phone=919727353200&text=${encodeURIComponent(handleBuildMessage())}`, '_blank')} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
-                      👤 Send to 97273 53200
-                    </button>
-                  </div>
-                </div>
-              )}
+
 
               {/* Notes */}
               <div className="form-group" style={{ marginBottom: '1.5rem' }}>
