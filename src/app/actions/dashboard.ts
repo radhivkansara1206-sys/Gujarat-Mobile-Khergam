@@ -178,6 +178,16 @@ export async function getDailySummaryAction(dateStr: string) {
     });
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
+    // Gifts for target date
+    const gifts = await prisma.gift.findMany({
+      where: {
+        createdAt: { gte: targetDate, lt: nextDay },
+      },
+      include: {
+        item: { select: { name: true } }
+      }
+    });
+
     // Replacements for target date
     const replacements = await prisma.replacement.findMany({
       where: {
@@ -216,6 +226,19 @@ export async function getDailySummaryAction(dateStr: string) {
         expensesCount: expenses.length,
         closedBy: session.name,
         itemsSold,
+        expenses: expenses.map(e => ({
+          id: e.id,
+          category: e.category,
+          description: e.description || '',
+          amount: e.amount
+        })),
+        gifts: gifts.map(g => ({
+          id: g.id,
+          itemName: g.item.name,
+          quantity: g.quantity,
+          recipientName: g.recipientName || '',
+          reason: g.reason || ''
+        }))
       },
     };
   } catch (error: any) {

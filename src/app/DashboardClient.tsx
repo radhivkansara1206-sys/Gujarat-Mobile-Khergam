@@ -69,6 +69,24 @@ export default function DashboardClient({
       itemsSoldText = `\n📦 *ITEMS SOLD TODAY*\n• No items sold today.\n`;
     }
 
+    let expensesText = '';
+    if (summaryData.expenses && summaryData.expenses.length > 0) {
+      expensesText = `\n💸 *EXPENSES TODAY*\n` +
+        summaryData.expenses.map((e: any) => `• ${e.category}${e.description ? ` (${e.description})` : ''}: ${formatCurrency(e.amount)}`).join('\n') +
+        `\n• *Total Expenses:* ${formatCurrency(summaryData.totalExpenses)} (${summaryData.expensesCount} records)\n`;
+    } else {
+      expensesText = `\n💸 *EXPENSES TODAY*\n• No expenses recorded today.\n`;
+    }
+
+    let giftsText = '';
+    if (summaryData.gifts && summaryData.gifts.length > 0) {
+      giftsText = `\n🎁 *GIFTS GIVEN TODAY*\n` +
+        summaryData.gifts.map((g: any) => `• ${g.itemName} × ${g.quantity}${g.recipientName ? ` (To: ${g.recipientName})` : ''}${g.reason ? ` - ${g.reason}` : ''}`).join('\n') +
+        `\n`;
+    } else {
+      giftsText = `\n🎁 *GIFTS GIVEN TODAY*\n• No gifts recorded today.\n`;
+    }
+
     return `📱 *GUJARAT MOBILE KHERGAM*
 📊 *Daily Business Summary*
 📅 *Date:* ${formattedDate}
@@ -78,10 +96,7 @@ export default function DashboardClient({
 • Cash Sales: ${formatCurrency(summaryData.salesCash)}
 • Online Sales: ${formatCurrency(summaryData.salesOnline)}
 • *Total Sales:* ${formatCurrency(summaryData.salesTotal)} (${summaryData.salesCount} bills)
-${itemsSoldText}
-💸 *EXPENSES*
-• Total Expenses: ${formatCurrency(summaryData.totalExpenses)} (${summaryData.expensesCount} records)
-
+${itemsSoldText}${expensesText}${giftsText}
 🔄 *REPLACEMENTS*
 • Replaced Stock: ${summaryData.totalReplacements} units
 
@@ -361,6 +376,50 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                   </div>
                 ) : (
                   <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No items sold today.</p>
+                )}
+              </div>
+
+              {/* Expenses Today List */}
+              <div style={{ marginBottom: '1.25rem', padding: '1rem', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '12px' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#991b1b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span>💸</span> Expenses Today
+                </p>
+                {summaryData.expenses && summaryData.expenses.length > 0 ? (
+                  <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {summaryData.expenses.map((exp: any, idx: number) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#7f1d1d' }}>
+                        <span style={{ fontWeight: 500, color: '#991b1b' }}>
+                          {exp.category} 
+                          {exp.description && <span style={{ color: '#b91c1c', opacity: 0.8, fontSize: '0.75rem', marginLeft: '0.25rem' }}>({exp.description})</span>}
+                        </span>
+                        <span>{formatCurrency(exp.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#b91c1c', opacity: 0.8, fontStyle: 'italic' }}>No expenses recorded today.</p>
+                )}
+              </div>
+
+              {/* Gifts Today List */}
+              <div style={{ marginBottom: '1.25rem', padding: '1rem', background: '#fdf2f8', border: '1px solid #fce7f3', borderRadius: '12px' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#9d174d', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span>🎁</span> Gifts Given Today
+                </p>
+                {summaryData.gifts && summaryData.gifts.length > 0 ? (
+                  <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {summaryData.gifts.map((gift: any, idx: number) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#831843' }}>
+                        <span style={{ fontWeight: 500, color: '#9d174d' }}>
+                          {gift.itemName} <span style={{ color: '#db2777' }}>× {gift.quantity}</span>
+                          {gift.recipientName && <span style={{ color: '#be185d', fontSize: '0.75rem', marginLeft: '0.25rem' }}>(To: {gift.recipientName})</span>}
+                        </span>
+                        {gift.reason && <span style={{ color: '#db2777', fontSize: '0.75rem', fontStyle: 'italic' }}>{gift.reason}</span>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#be185d', opacity: 0.8, fontStyle: 'italic' }}>No gifts recorded today.</p>
                 )}
               </div>
 
