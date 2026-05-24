@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import CategoryCard from '@/components/CategoryCard';
 import Modal from '@/components/Modal';
-import { createCategory, getStockReportData } from '@/app/actions/categories';
+import { createCategory, deleteCategory, getStockReportData } from '@/app/actions/categories';
 import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
@@ -15,7 +15,9 @@ interface InventoryClientProps {
 
 export default function InventoryClient({ categories, isAdmin }: InventoryClientProps) {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [deletingCategory, setDeletingCategory] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const { showToast } = useToast();
   const router = useRouter();
@@ -33,6 +35,20 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
       showToast(result.error || 'Failed to create category', 'error');
     }
     setLoading(false);
+  }
+
+  async function handleDeleteCategory() {
+    if (!deletingCategory) return;
+    setDeleteLoading(true);
+    const result = await deleteCategory(deletingCategory.id);
+    if (result.success) {
+      showToast('Category deleted successfully');
+      setDeletingCategory(null);
+      router.refresh();
+    } else {
+      showToast(result.error || 'Failed to delete category', 'error');
+    }
+    setDeleteLoading(false);
   }
 
   const handleDownloadPDF = async () => {
@@ -333,6 +349,7 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
               itemCount={cat._count?.items || 0}
               lowStockCount={lowStock}
               outOfStockCount={outOfStock}
+              onDelete={isAdmin ? () => setDeletingCategory(cat) : undefined}
             />
           );
         })}
@@ -369,6 +386,31 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={!!deletingCategory} onClose={() => setDeletingCategory(null)} title="Delete Category" size="sm">
+        {deletingCategory && (
+          <div>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⚠️</div>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Are you sure?</h4>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: '1.4' }}>
+                You are about to delete the category <strong>{deletingCategory.icon} {deletingCategory.name}</strong>.
+              </p>
+              <p style={{ fontSize: '0.825rem', color: 'var(--danger)', marginTop: '0.5rem', fontWeight: 500 }}>
+                This will also deactivate all items and stock within this category!
+              </p>
+            </div>
+            <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setDeletingCategory(null)} disabled={deleteLoading}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-danger" onClick={handleDeleteCategory} disabled={deleteLoading}>
+                {deleteLoading ? <><span className="spinner"></span> Deleting...</> : 'Delete Category'}
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
