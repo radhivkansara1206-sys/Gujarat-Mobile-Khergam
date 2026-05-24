@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth';
 
 export async function getDashboardStats() {
   try {
@@ -140,5 +141,67 @@ export async function getLowStockItems() {
   } catch (error) {
     console.error('Low stock items error:', error);
     return { success: false, error: 'Failed to fetch low stock items' };
+  }
+}
+
+export async function getDailySummaryAction(dateStr: string) {
+  try {
+    const session = await requireAuth();
+    const targetDate = new Date(dateStr);
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    // Sales for target date
+    const sales = await prisma.sale.findMany({
+      where: {
+        createdAt: { gte: targetDate, lt: nextDay },
+      },
+      include: { item: true },
+    });
+
+    const salesCash = sales
+      .filter(s => s.paymentType === 'cash')
+      .reduce((sum, s) => sum + s.totalAmount, 0);
+    const salesOnline = sales
+      .filter(s => s.paymentType === 'online')
+      .reduce((sum, s) => sum + s.totalAmount, 0);
+    const salesGift = sales
+      .filter(s => s.paymentType === 'gift')
+      .reduce((sum, s) => sum + s.quantity, 0);
+
+    // Expenses for target date
+    const expenses = await prisma.expense.findMany({
+      where: {
+        createdAt: { gte: targetDate, lt: nextDay },
+      },
+    });
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+    // Replacements for target date
+    const replacements = await prisma.replacement.findMany({
+      where: {
+        createdAt: { gte: targetDate, lt: nextDay },
+      },
+    });
+    const totalReplacements = replacements.reduce((sum, r) => sum + r.quantity, 0);
+
+    return {
+      success: true,
+      data: {
+        salesCash,
+        salesOnline,
+        salesGift,
+        salesTotal: salesCash + salesOnline,
+        totalExpenses,
+        totalReplacements,
+        salesCount: sales.filter(s => s.paymentType !== 'gift').length,
+        expensesCount: expenses.length,
+        closedBy: session.name,
+      },
+    };
+  } catch (error: any) {
+    console.error('Get daily summary error:', error);
+    return { success: false, error: error.message || 'Failed to fetch daily summary' };
   }
 }

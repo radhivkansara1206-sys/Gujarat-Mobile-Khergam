@@ -1,9 +1,13 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { formatCurrency, formatRelativeTime } from '@/lib/utils';
 import StatsCard from '@/components/StatsCard';
 import CategoryCard from '@/components/CategoryCard';
 import Link from 'next/link';
+import Modal from '@/components/Modal';
+import { useToast } from '@/components/Toast';
+import { getDailySummaryAction } from '@/app/actions/dashboard';
 
 interface DashboardClientProps {
   stats: any;
@@ -22,12 +26,85 @@ export default function DashboardClient({
   userName,
   isAdmin,
 }: DashboardClientProps) {
+  const [showClosingModal, setShowClosingModal] = useState(false);
+  const [closingDate, setClosingDate] = useState(new Date().toISOString().split('T')[0]);
+  const [summaryData, setSummaryData] = useState<any>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [notes, setNotes] = useState('');
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    if (!showClosingModal) return;
+    
+    async function loadSummary() {
+      setLoadingSummary(true);
+      const res = await getDailySummaryAction(closingDate);
+      if (res.success) {
+        setSummaryData(res.data);
+      } else {
+        showToast(res.error || 'Failed to load summary', 'error');
+      }
+      setLoadingSummary(false);
+    }
+    
+    loadSummary();
+  }, [closingDate, showClosingModal, showToast]);
+
+  const handleWhatsAppShare = () => {
+    if (!summaryData) return;
+
+    const formattedDate = new Date(closingDate).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const message = `📱 *GUJARAT MOBILE KHERGAM*
+📊 *Daily Business Summary*
+📅 *Date:* ${formattedDate}
+
+━━━━━━━━━━━━━━━━━━━━
+💰 *SALES SUMMARY*
+• Cash Sales: ${formatCurrency(summaryData.salesCash)}
+• Online Sales: ${formatCurrency(summaryData.salesOnline)}
+• *Total Sales:* ${formatCurrency(summaryData.salesTotal)} (${summaryData.salesCount} bills)
+
+💸 *EXPENSES*
+• Total Expenses: ${formatCurrency(summaryData.totalExpenses)} (${summaryData.expensesCount} records)
+
+🔄 *REPLACEMENTS*
+• Replaced Stock: ${summaryData.totalReplacements} units
+
+📈 *NET SUMMARY*
+• Expected Cash: ${formatCurrency(summaryData.salesCash)}
+• *Net Revenue:* ${formatCurrency(summaryData.salesTotal - summaryData.totalExpenses)}
+━━━━━━━━━━━━━━━━━━━━
+📝 *Notes:*
+${notes.trim() || 'All systems clear. Counter closed.'}
+
+👤 *Closed By:* ${summaryData.closedBy}`;
+
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    showToast('Daily Summary report generated and opening in WhatsApp!');
+    setShowClosingModal(false);
+  };
+
   return (
     <div>
       <div className="page-header">
         <div>
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">Welcome back, {userName}! Here is your store overview.</p>
+        </div>
+        <div className="header-actions">
+          <button 
+            onClick={() => setShowClosingModal(true)} 
+            className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            📊 Daily Summary
+          </button>
         </div>
       </div>
 
@@ -185,6 +262,96 @@ export default function DashboardClient({
           </div>
         </div>
       </div>
+
+      <Modal isOpen={showClosingModal} onClose={() => setShowClosingModal(false)} title="📊 Daily Business Summary" size="md">
+        <div style={{ padding: '0.25rem' }}>
+          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+            <label className="form-label" htmlFor="closing-date">Select Summary Date</label>
+            <input 
+              id="closing-date"
+              type="date" 
+              className="form-input" 
+              value={closingDate} 
+              max={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setClosingDate(e.target.value)} 
+            />
+          </div>
+
+          {loadingSummary ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
+              <span className="spinner spinner-lg"></span>
+              <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading summary metrics...</p>
+            </div>
+          ) : summaryData ? (
+            <div>
+              {/* Metrics Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ background: 'var(--success-light)', color: 'var(--success-dark)', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 500 }}>Expected Cash</p>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '1.35rem', fontWeight: 800 }}>{formatCurrency(summaryData.salesCash)}</p>
+                </div>
+                <div style={{ background: 'var(--info-light)', color: 'var(--info-dark)', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 500 }}>Expected Online</p>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '1.35rem', fontWeight: 800 }}>{formatCurrency(summaryData.salesOnline)}</p>
+                </div>
+                <div style={{ background: 'var(--danger-light)', color: 'var(--danger-dark)', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 500 }}>Total Expenses</p>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '1.35rem', fontWeight: 800 }}>{formatCurrency(summaryData.totalExpenses)}</p>
+                </div>
+                <div style={{ background: '#f8fafc', border: '1px solid var(--border)', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Net Revenue</p>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {formatCurrency(summaryData.salesTotal - summaryData.totalExpenses)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Replacements Info */}
+              {summaryData.totalReplacements > 0 && (
+                <div style={{ padding: '0.75rem 1rem', background: '#fff7ed', border: '1px solid #ffedd5', borderRadius: '8px', fontSize: '0.85rem', color: '#c2410c', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                  <span style={{ fontSize: '1.1rem' }}>🔄</span>
+                  <span><strong>{summaryData.totalReplacements} units</strong> defective stock replaced today.</span>
+                </div>
+              )}
+
+              {/* Notes */}
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label className="form-label" htmlFor="closing-notes">Closing Notes / Notes to Owner</label>
+                <textarea 
+                  id="closing-notes"
+                  className="form-input" 
+                  style={{ minHeight: '80px' }}
+                  placeholder="e.g. Counter closed successfully, matched drawer balance." 
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
+
+              {/* Footer */}
+              <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowClosingModal(false)}>
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  onClick={handleWhatsAppShare}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#25D366', borderColor: '#25D366', color: '#fff' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.003 5.324 5.328 0 11.832 0c3.15.001 6.11 1.229 8.337 3.458 2.226 2.227 3.453 5.187 3.451 8.338-.004 6.508-5.33 11.832-11.835 11.832-2.004-.001-3.972-.51-5.753-1.485L0 24zm6.59-4.846c1.78.966 3.55 1.488 5.233 1.489 5.331 0 9.68-4.321 9.683-9.626.002-2.57-1.002-4.99-2.825-6.812C16.914 2.38 14.49 1.376 11.92 1.376 6.59 1.376 2.24 5.698 2.237 11.004c-.001 1.905.503 3.755 1.472 5.434l-.973 3.553 3.911-.943z"/>
+                  </svg>
+                  Share on WhatsApp
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-secondary)' }}>
+              Failed to load closing analytics.
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }
