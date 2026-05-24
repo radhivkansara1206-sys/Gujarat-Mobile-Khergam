@@ -78,7 +78,7 @@ export default function StockReportClient({ categories, totals }: StockReportCli
       </div>
 
       {/* Category-wise tables */}
-      {categories.map((category: any) => (
+      {categories.filter((cat: any) => cat.items && cat.items.length > 0).map((category: any) => (
         <div key={category.id} style={{ marginBottom: '2rem', pageBreakInside: 'avoid' }}>
           <h2 style={{
             fontSize: '1.1rem', fontWeight: 700, color: '#0f172a',
@@ -133,6 +133,13 @@ export default function StockReportClient({ categories, totals }: StockReportCli
           )}
         </div>
       ))}
+
+      {categories.filter((cat: any) => cat.items && cat.items.length > 0).length === 0 && (
+        <div style={{ textAlign: 'center', padding: '3rem 1.5rem', color: '#64748b', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #e2e8f0', marginBottom: '2rem' }}>
+          <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 500 }}>No active stock items available to display.</p>
+          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>Add items with stock in the inventory dashboard first.</p>
+        </div>
+      )}
 
       {/* Footer */}
       <div style={{ textAlign: 'center', paddingTop: '1.5rem', borderTop: '2px solid #e2e8f0', color: '#94a3b8', fontSize: '0.75rem' }}>
