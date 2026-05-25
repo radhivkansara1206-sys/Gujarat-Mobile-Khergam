@@ -28,6 +28,72 @@ export default function StockReportClient({ categories, totals }: StockReportCli
     minute: '2-digit',
   });
 
+  const handleExportToExcel = () => {
+    // Prepare headers
+    const headers = [
+      'Category',
+      'Item Name',
+      'Brand',
+      'Model',
+      'Purchase Price (INR)',
+      'Selling Price (INR)',
+      'Stock',
+      'Status',
+      'Total Cost Value (INR)',
+      'Total Retail Value (INR)',
+      'Potential Profit (INR)'
+    ];
+
+    const rows: string[][] = [];
+
+    categories.forEach((cat: any) => {
+      const items = cat.items || [];
+      if (items.length === 0) return;
+      items.forEach((item: any) => {
+        const isLow = item.stock > 0 && item.stock <= item.lowStockThreshold;
+        const isOut = item.stock <= 0;
+        const status = isOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock';
+        
+        const costValue = item.purchasePrice * item.stock;
+        const retailValue = item.sellingPrice * item.stock;
+        const profit = retailValue - costValue;
+
+        rows.push([
+          cat.name,
+          item.name,
+          item.brand || '-',
+          item.model || '-',
+          item.purchasePrice.toString(),
+          item.sellingPrice.toString(),
+          item.stock.toString(),
+          status,
+          costValue.toString(),
+          retailValue.toString(),
+          profit.toString()
+        ]);
+      });
+    });
+
+    // Format CSV content with BOM to handle currency signs
+    const csvContent = 
+      '\uFEFF' + 
+      [
+        headers.join(','),
+        ...rows.map(row => row.map(val => `"${val.replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Gujarat_Mobile_Stock_Report_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem', fontFamily: "'Inter', sans-serif" }}>
       {/* Print button (hidden in print) */}
@@ -38,6 +104,19 @@ export default function StockReportClient({ categories, totals }: StockReportCli
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
           🖨️ Print Report
+        </button>
+
+        <button
+          onClick={handleExportToExcel}
+          className="btn btn-secondary"
+          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#10B981', color: 'white', border: '1px solid #10B981' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export to Excel
         </button>
 
         <button
