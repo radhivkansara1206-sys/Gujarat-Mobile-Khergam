@@ -84,7 +84,7 @@ export async function getRegisterStatus() {
   }
 }
 
-export async function openRegister(data: { openingBalance: number, discrepancyAmount: number, discrepancyReason?: string, openingNotes?: string }) {
+export async function openRegister(data: { openingBalance: number, discrepancyAmount: number, discrepancyReason?: string, openingNotes?: string, openedAt?: string }) {
   try {
     const session = await getSession();
     if (!session) return { success: false, error: 'Unauthorized' };
@@ -101,6 +101,7 @@ export async function openRegister(data: { openingBalance: number, discrepancyAm
         discrepancyAmount: data.discrepancyAmount,
         discrepancyReason: data.discrepancyReason || '',
         openingNotes: data.openingNotes || '',
+        openedAt: data.openedAt ? new Date(data.openedAt) : new Date(),
       }
     });
 
@@ -112,7 +113,7 @@ export async function openRegister(data: { openingBalance: number, discrepancyAm
   }
 }
 
-export async function closeRegister(data: { actualClosingBalance: number, discrepancyAmount: number, discrepancyReason?: string, expectedClosingBalance: number, closingNotes?: string }) {
+export async function closeRegister(data: { actualClosingBalance: number, expectedClosingBalance: number, discrepancyAmount: number, discrepancyReason?: string, closingNotes?: string, closedAt?: string }) {
   try {
     const session = await getSession();
     if (!session) return { success: false, error: 'Unauthorized' };
@@ -120,25 +121,59 @@ export async function closeRegister(data: { actualClosingBalance: number, discre
     const openRegister = await prisma.cashRegister.findFirst({ where: { status: 'OPEN' } });
     if (!openRegister) return { success: false, error: 'No open register found.' };
 
+    const closedDate = data.closedAt ? new Date(data.closedAt) : new Date();
+
+    // Recalculate expected closing balance exactly up to `closedDate`
+    const sales = await prisma.sale.aggregate({
+      where: {
+        paymentType: 'cash',
+        createdAt: { gte: openRegister.openedAt, lte: closedDate }
+      },
+      _sum: { totalAmount: true }
+    });
+    
+    const expenses = await prisma.expense.aggregate({
+      where: {
+        createdAt: { gte: openRegister.openedAt, lte: closedDate }
+      },
+      _sum: { amount: true }
+    });
+
+    const cashSales = sales._sum.totalAmount || 0;
+    const cashExpenses = expenses._sum.amount || 0;
+    
+    const movements = await prisma.cashMovement.findMany({
+      where: {
+        registerId: openRegister.id,
+        createdAt: { lte: closedDate }
+      }
+    });
+
+    const additions = movements.filter(m => m.type === 'ADDITION').reduce((acc, m) => acc + m.amount, 0);
+    const removals = movements.filter(m => m.type === 'REMOVAL').reduce((acc, m) => acc + m.amount, 0);
+
+    const calculatedExpectedCash = openRegister.openingBalance + cashSales + additions - cashExpenses - removals;
+    const finalDiscrepancy = data.actualClosingBalance - calculatedExpectedCash;
+
     const closed = await prisma.cashRegister.update({
       where: { id: openRegister.id },
       data: {
         closingBalance: data.actualClosingBalance,
-        expectedClosingBalance: data.expectedClosingBalance,
-        discrepancyAmount: data.discrepancyAmount,
+        expectedClosingBalance: calculatedExpectedCash,
+        discrepancyAmount: finalDiscrepancy,
         discrepancyReason: data.discrepancyReason || '',
         closingNotes: data.closingNotes || '',
-        closedAt: new Date(),
+        closedAt: closedDate,
         closedById: session.userId,
         status: 'CLOSED'
       }
     });
 
-    if (data.discrepancyAmount !== 0) {
+    if (finalDiscrepancy !== 0) {
       await prisma.notification.create({
         data: {
           type: 'DISCREPANCY',
-          message: `ROJMEL Closed with discrepancy: ${data.discrepancyAmount < 0 ? 'Missing' : 'Extra'} ${Math.abs(data.discrepancyAmount)}. Reason: ${data.discrepancyReason}`,
+          message: `ROJMEL Closed with discrepancy: ${finalDiscrepancy < 0 ? 'Missing' : 'Extra'} ${Math.abs(finalDiscrepancy)}. Reason: ${data.discrepancyReason}`,
           userId: session.userId,
         }
       });

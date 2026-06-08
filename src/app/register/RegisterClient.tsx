@@ -29,6 +29,18 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
   const [actualClosingBalance, setActualClosingBalance] = useState<number | string>(data?.currentExpectedCash || 0);
   const [closeDiscrepancyReason, setCloseDiscrepancyReason] = useState('');
 
+  // Custom Time Overrides
+  const [openedAtOverride, setOpenedAtOverride] = useState(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  });
+  const [closedAtOverride, setClosedAtOverride] = useState(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  });
+
   // Calculator State
   const [useCalculator, setUseCalculator] = useState(false);
   const [denominations, setDenominations] = useState({
@@ -136,7 +148,8 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
       openingBalance: Number(openingBalance), 
       discrepancyAmount, 
       discrepancyReason: hasPastRegister ? openDiscrepancyReason : 'Initial System Setup',
-      openingNotes: useCalculator ? JSON.stringify(denominations) : ''
+      openingNotes: useCalculator ? JSON.stringify(denominations) : '',
+      openedAt: openedAtOverride
     });
     if (res.success) {
       showToast('ROJMEL opened successfully!');
@@ -164,7 +177,8 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
       expectedClosingBalance: data.currentExpectedCash, 
       discrepancyAmount, 
       discrepancyReason: closeDiscrepancyReason,
-      closingNotes: useCalculator ? JSON.stringify(denominations) : ''
+      closingNotes: useCalculator ? JSON.stringify(denominations) : '',
+      closedAt: closedAtOverride
     });
 
     if (res.success) {
@@ -248,6 +262,18 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
                 <div className="form-static-value">{formatCurrency(prevClosing)}</div>
               </div>
             )}
+            
+            <div className="form-group">
+              <label className="form-label">Opening Date & Time</label>
+              <input 
+                type="datetime-local" 
+                className="form-input" 
+                value={openedAtOverride} 
+                onChange={e => setOpenedAtOverride(e.target.value)} 
+                required 
+              />
+            </div>
+            
             <div className="form-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                 <label className="form-label" style={{ margin: 0 }}>
@@ -446,10 +472,26 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
       <Modal isOpen={showCloseModal} onClose={() => setShowCloseModal(false)} title="Close Drawer">
         <form onSubmit={handleCloseRegister}>
           <div className="form-group">
+            <label className="form-label">Closing Date & Time</label>
+            <input 
+              type="datetime-local" 
+              className="form-input" 
+              value={closedAtOverride} 
+              onChange={e => setClosedAtOverride(e.target.value)} 
+              required 
+            />
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+              Note: Changing this will recalculate Expected Cash accurately on the backend based on sales exactly up to this time.
+            </p>
+          </div>
+          <div className="form-group">
             <label className="form-label">Expected Cash in Drawer</label>
             <div className="form-static-value" style={{ color: 'var(--primary)', fontWeight: 'bold' }}>
               {formatCurrency(data.currentExpectedCash)}
             </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+              (Live calculation up to current time. Actual calculation will adjust to your custom time above).
+            </p>
           </div>
           <div className="form-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
