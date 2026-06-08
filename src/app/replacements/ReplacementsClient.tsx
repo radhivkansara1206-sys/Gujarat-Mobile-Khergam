@@ -287,7 +287,14 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
                       </span>
                     </td>
                     <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {r.reason?.replace('RESTOCK:', '').trim() || '—'}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <span>{r.reason?.replace('RESTOCK:', '').trim() || '—'}</span>
+                        {r.originalPurchaseDate && (
+                          <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            📅 Bought: {new Date(r.originalPurchaseDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>{r.user?.name || 'Unknown'}</td>
                     {isAdmin && (

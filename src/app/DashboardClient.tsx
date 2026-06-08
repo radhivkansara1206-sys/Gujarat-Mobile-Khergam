@@ -242,7 +242,11 @@ export default function DashboardClient({
         summaryData.itemizedReplacements.map((r: any) => {
           const isRestock = r.reason?.startsWith('RESTOCK:') || r.reason?.startsWith('Exchanged for');
           const cleanReason = r.reason?.replace('RESTOCK:', '').trim();
-          return `• ${isRestock ? '✅ Exchange' : '❌ Defective'}: ${r.itemName} × ${r.quantity}${cleanReason ? ` (${cleanReason})` : ''}`;
+          let line = `• ${isRestock ? '✅ Exchange' : '❌ Defective'}: ${r.itemName} × ${r.quantity}${cleanReason ? ` (${cleanReason})` : ''}`;
+          if (r.originalPurchaseDate) {
+            line += ` [Bought: ${new Date(r.originalPurchaseDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}]`;
+          }
+          return line;
         }).join('\n') +
         `\n`;
     } else if (summaryData.totalReplacements > 0) {
@@ -507,7 +511,7 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                       {activity.type === 'sale'
                         ? `${formatCurrency(activity.amount)} · ${activity.paymentType}`
                         : activity.type === 'replacement'
-                        ? ((activity.recipientName?.startsWith('RESTOCK:') || activity.recipientName?.startsWith('Exchanged for')) ? `Exchange · ${activity.recipientName?.replace('RESTOCK:', '').trim()}` : `Replacement${activity.recipientName ? ` - ${activity.recipientName}` : ''}`)
+                        ? ((activity.recipientName?.startsWith('RESTOCK:') || activity.recipientName?.startsWith('Exchanged for')) ? `Exchange · ${activity.recipientName?.replace('RESTOCK:', '').trim()}` : `Replacement${activity.recipientName ? ` - ${activity.recipientName}` : ''}`) + (activity.originalPurchaseDate ? ` (Bought ${new Date(activity.originalPurchaseDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })})` : '')
                         : `Gift${activity.recipientName ? ` to ${activity.recipientName}` : ''}`
                       }
                       {' · '}{activity.userName}
@@ -764,7 +768,10 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                           <span style={{ fontWeight: 500 }}>
                             {isRestock ? '✅ Exchange' : '❌ Defective'}: {r.itemName} <span style={{ opacity: 0.8 }}>× {r.quantity}</span>
                           </span>
-                          {cleanReason && <span style={{ fontSize: '0.75rem', fontStyle: 'italic', textAlign: 'right', whiteSpace: 'nowrap', opacity: 0.8 }}>{cleanReason}</span>}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.15rem' }}>
+                            {cleanReason && <span style={{ fontSize: '0.75rem', fontStyle: 'italic', textAlign: 'right', whiteSpace: 'nowrap', opacity: 0.8 }}>{cleanReason}</span>}
+                            {r.originalPurchaseDate && <span style={{ fontSize: '0.7rem', color: '#64748b', opacity: 0.8 }}>Bought: {new Date(r.originalPurchaseDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>}
+                          </div>
                         </div>
                       );
                     })}

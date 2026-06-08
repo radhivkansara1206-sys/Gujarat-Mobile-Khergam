@@ -11,6 +11,7 @@ export async function recordReplacement(data: {
   exchangeItemId?: string;
   cashCollected?: number;
   isDefective?: boolean;
+  originalPurchaseDate?: string;
 }) {
   try {
     const session = await requireAuth();
@@ -62,6 +63,7 @@ export async function recordReplacement(data: {
           userId: session.id,
           quantity: data.quantity,
           reason: finalReason,
+          originalPurchaseDate: data.originalPurchaseDate ? new Date(data.originalPurchaseDate) : undefined,
         },
       });
 

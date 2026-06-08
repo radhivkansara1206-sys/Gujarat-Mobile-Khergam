@@ -117,6 +117,7 @@ export async function getRecentActivity() {
       paymentType: null,
       userName: r.user.name,
       recipientName: r.reason,
+      originalPurchaseDate: r.originalPurchaseDate,
       createdAt: r.createdAt,
     }));
 
@@ -231,6 +232,7 @@ export async function getDailySummaryAction(dateStr: string) {
       itemName: r.item.name,
       quantity: r.quantity,
       reason: r.reason || '',
+      originalPurchaseDate: r.originalPurchaseDate,
     }));
 
     // Fetch ROJMEL for the day

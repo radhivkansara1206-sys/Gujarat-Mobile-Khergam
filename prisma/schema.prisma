@@ -101,6 +101,7 @@ model Replacement {
   userId        String
   quantity      Int
   reason        String?  @default("")
+  originalPurchaseDate DateTime?
   createdAt     DateTime @default(now())
   item          Item     @relation(fields: [itemId], references: [id])
   user          User     @relation(fields: [userId], references: [id])

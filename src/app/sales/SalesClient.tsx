@@ -66,6 +66,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [exchangeItemId, setExchangeItemId] = useState('');
   const [cashCollected, setCashCollected] = useState<number | ''>('');
   const [isDefective, setIsDefective] = useState(true);
+  const [originalPurchaseDate, setOriginalPurchaseDate] = useState('');
 
   // Filters
   const [startDate, setStartDate] = useState('');
@@ -134,6 +135,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
       exchangeItemId: isExchange ? exchangeItemId : undefined,
       cashCollected: isExchange && cashCollected !== '' ? Number(cashCollected) : undefined,
       isDefective: isExchange ? isDefective : true,
+      originalPurchaseDate: originalPurchaseDate || undefined,
     });
     if (result.success) {
       showToast('Replacement recorded successfully! Stock updated.');
@@ -144,6 +146,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
       setExchangeItemId('');
       setCashCollected('');
       setIsDefective(true);
+      setOriginalPurchaseDate('');
       router.refresh();
     } else {
       showToast(result.error || 'Failed to record replacement', 'error');
@@ -606,6 +609,23 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
               className="form-input"
               placeholder="e.g. Broken display, returned to manufacturer"
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Original Purchase Date (Optional)</label>
+            <input
+              type="date"
+              className="form-input"
+              value={originalPurchaseDate}
+              onChange={(e) => setOriginalPurchaseDate(e.target.value)}
+              max={(() => {
+                const d = new Date();
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              })()}
+            />
+            <span className="form-hint" style={{ display: 'block', marginTop: '0.25rem' }}>
+              Select the date the customer originally bought this item (for reference).
+            </span>
           </div>
 
           <div className="modal-actions">
