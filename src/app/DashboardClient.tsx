@@ -737,8 +737,8 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
               </div>
 
               {/* Footer */}
-              <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowClosingModal(false)}>
+              <div className="modal-actions" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowClosingModal(false)} style={{ flexGrow: 1, minWidth: '80px', textAlign: 'center', justifyContent: 'center' }}>
                   Cancel
                 </button>
                 <button 
@@ -746,10 +746,10 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                   className="btn btn-primary" 
                   onClick={handleShareImage}
                   disabled={generatingImage}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#3b82f6', borderColor: '#3b82f6', color: '#fff' }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: '#3b82f6', borderColor: '#3b82f6', color: '#fff', flexGrow: 1, minWidth: '140px' }}
                 >
                   {generatingImage ? <span className="spinner"></span> : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
                       <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                       <circle cx="8.5" cy="8.5" r="1.5"/>
                       <polyline points="21 15 16 10 5 21"/>
@@ -761,9 +761,9 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                   type="button" 
                   className="btn btn-primary" 
                   onClick={handleWhatsAppShare}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#25D366', borderColor: '#25D366', color: '#fff' }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: '#25D366', borderColor: '#25D366', color: '#fff', flexGrow: 1, minWidth: '160px' }}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
                     <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.003 5.324 5.328 0 11.832 0c3.15.001 6.11 1.229 8.337 3.458 2.226 2.227 3.453 5.187 3.451 8.338-.004 6.508-5.33 11.832-11.835 11.832-2.004-.001-3.972-.51-5.753-1.485L0 24zm6.59-4.846c1.78.966 3.55 1.488 5.233 1.489 5.331 0 9.68-4.321 9.683-9.626.002-2.57-1.002-4.99-2.825-6.812C16.914 2.38 14.49 1.376 11.92 1.376 6.59 1.376 2.24 5.698 2.237 11.004c-.001 1.905.503 3.755 1.472 5.434l-.973 3.553 3.911-.943z"/>
                   </svg>
                   Share on WhatsApp
