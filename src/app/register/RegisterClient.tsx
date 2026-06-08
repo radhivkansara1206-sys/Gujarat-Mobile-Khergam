@@ -22,11 +22,11 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
 
   // Open Register Form
   const prevClosing = data?.lastRegister?.closingBalance || 0;
-  const [openingBalance, setOpeningBalance] = useState<number>(prevClosing);
+  const [openingBalance, setOpeningBalance] = useState<number | string>(prevClosing);
   const [openDiscrepancyReason, setOpenDiscrepancyReason] = useState('');
 
   // Close Register Form
-  const [actualClosingBalance, setActualClosingBalance] = useState<number>(data?.currentExpectedCash || 0);
+  const [actualClosingBalance, setActualClosingBalance] = useState<number | string>(data?.currentExpectedCash || 0);
   const [closeDiscrepancyReason, setCloseDiscrepancyReason] = useState('');
 
   // Calculator State
@@ -151,7 +151,7 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
   async function handleCloseRegister(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const discrepancyAmount = actualClosingBalance - (data.currentExpectedCash || 0);
+    const discrepancyAmount = Number(actualClosingBalance) - (data.currentExpectedCash || 0);
     
     if (discrepancyAmount !== 0 && !closeDiscrepancyReason) {
       showToast('Reason required for closing balance discrepancy', 'error');
@@ -160,7 +160,7 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
     }
 
     const res = await closeRegister({ 
-      actualClosingBalance, 
+      actualClosingBalance: Number(actualClosingBalance), 
       expectedClosingBalance: data.currentExpectedCash, 
       discrepancyAmount, 
       discrepancyReason: closeDiscrepancyReason,
@@ -263,7 +263,7 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
                 type="number" 
                 className="form-input" 
                 value={openingBalance} 
-                onChange={e => setOpeningBalance(Number(e.target.value))} 
+                onChange={e => setOpeningBalance(e.target.value === '' ? '' : Number(e.target.value))} 
                 min="0" 
                 required 
                 readOnly={useCalculator}
@@ -271,10 +271,10 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
               />
             </div>
             
-            {!!data?.lastRegister && openingBalance !== prevClosing && (
+            {!!data?.lastRegister && Number(openingBalance) !== prevClosing && (
               <div style={{ padding: '1rem', background: '#fee2e2', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #fca5a5' }}>
                 <p style={{ color: '#991b1b', fontWeight: 600, marginBottom: '0.5rem' }}>
-                  ⚠️ Discrepancy Detected: {formatCurrency(openingBalance - prevClosing)}
+                  ⚠️ Discrepancy Detected: {formatCurrency(Number(openingBalance) - prevClosing)}
                 </p>
                 <div className="form-group">
                   <label className="form-label">Reason for Discrepancy *</label>
@@ -464,7 +464,7 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
               type="number" 
               className="form-input" 
               value={actualClosingBalance} 
-              onChange={e => setActualClosingBalance(Number(e.target.value))} 
+              onChange={e => setActualClosingBalance(e.target.value === '' ? '' : Number(e.target.value))} 
               min="0" 
               required 
               readOnly={useCalculator}
@@ -472,10 +472,10 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
             />
           </div>
 
-          {actualClosingBalance !== data.currentExpectedCash && (
+          {Number(actualClosingBalance) !== data.currentExpectedCash && (
             <div style={{ padding: '1rem', background: '#fee2e2', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #fca5a5' }}>
               <p style={{ color: '#991b1b', fontWeight: 600, marginBottom: '0.5rem' }}>
-                ⚠️ Discrepancy Detected: {formatCurrency(actualClosingBalance - data.currentExpectedCash)}
+                ⚠️ Discrepancy Detected: {formatCurrency(Number(actualClosingBalance) - data.currentExpectedCash)}
               </p>
               <div className="form-group">
                 <label className="form-label">Reason for Discrepancy *</label>
