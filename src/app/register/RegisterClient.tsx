@@ -124,7 +124,7 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
     e.preventDefault();
     setLoading(true);
     const hasPastRegister = !!data?.lastRegister;
-    const discrepancyAmount = hasPastRegister ? openingBalance - prevClosing : 0;
+    const discrepancyAmount = hasPastRegister ? Number(openingBalance) - prevClosing : 0;
     
     if (hasPastRegister && discrepancyAmount !== 0 && !openDiscrepancyReason) {
       showToast('Reason required for opening balance discrepancy', 'error');
@@ -133,7 +133,7 @@ export default function RegisterClient({ initialData, isAdmin }: { initialData: 
     }
 
     const res = await openRegister({ 
-      openingBalance, 
+      openingBalance: Number(openingBalance), 
       discrepancyAmount, 
       discrepancyReason: hasPastRegister ? openDiscrepancyReason : 'Initial System Setup',
       openingNotes: useCalculator ? JSON.stringify(denominations) : ''
