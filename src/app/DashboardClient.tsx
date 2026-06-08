@@ -131,52 +131,16 @@ export default function DashboardClient({
       year: 'numeric'
     });
 
-    // Auto-calculate denominations from an amount (greedy)
-    const calcDenoms = (amount: number) => {
-      let remaining = Math.round(amount);
-      const result: Record<string, number> = { 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0, coins: 0 };
-      for (const val of [500, 200, 100, 50, 20, 10]) {
-        result[String(val)] = Math.floor(remaining / val);
-        remaining -= result[String(val)] * val;
-      }
-      result.coins = remaining;
-      return result;
-    };
-
-    // Format denominations — use stored notes if set, else auto-calc from amount
-    const formatDenomsText = (notesJson: string | null, fallbackAmount?: number) => {
-      let denoms: Record<string, number> | null = null;
-      if (notesJson) {
-        try { denoms = JSON.parse(notesJson); } catch {}
-      }
-      const hasData = denoms && Object.values(denoms).some(v => Number(v) > 0);
-      if (!hasData) {
-        if (fallbackAmount && fallbackAmount > 0) {
-          denoms = calcDenoms(fallbackAmount);
-        } else {
-          return '';
-        }
-      }
-      const parts = Object.entries(denoms!)
-        .filter(([_, val]) => Number(val) > 0)
-        .map(([k, v]) => `${k === 'coins' ? 'Coins' : '\u20b9' + k} × ${v}`);
-      return parts.length > 0 ? `\n    📋 ${parts.join(', ')}` : '';
-    };
+    // Note: denominations are shown in the on-screen modal only, not in the WhatsApp message
 
     let registerText = '';
     if (summaryData.register) {
       const reg = summaryData.register;
-      const openingNotesText = formatDenomsText(reg.openingNotes, reg.openingBalance);
-      const closingNotesText = reg.status === 'CLOSED'
-        ? formatDenomsText(reg.closingNotes, reg.closingBalance || 0)
-        : '';
-      
       registerText = `\n━━━━━━━━━━━━━━━━━━━━\n💵 *ROJMEL REGISTER DETAILS*\n` +
         `• Status: ${reg.status}\n` +
-        `• Opening Cash: ${formatCurrency(reg.openingBalance)}${openingNotesText}\n`;
-        
+        `• Opening Cash: ${formatCurrency(reg.openingBalance)}\n`;
       if (reg.status === 'CLOSED') {
-        registerText += `• Closing Cash Counted: ${formatCurrency(reg.closingBalance || 0)}${closingNotesText}\n` +
+        registerText += `• Closing Cash Counted: ${formatCurrency(reg.closingBalance || 0)}\n` +
           `• Expected Cash: ${formatCurrency(reg.expectedClosingBalance || 0)}\n`;
         if (reg.discrepancyAmount !== 0) {
           registerText += `• *Discrepancy:* ${formatCurrency(reg.discrepancyAmount)} (${reg.discrepancyReason || 'No reason'})\n`;
