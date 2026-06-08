@@ -240,7 +240,7 @@ export default function DashboardClient({
     if (summaryData.itemizedReplacements && summaryData.itemizedReplacements.length > 0) {
       replacementsText = `\n🔄 *REPLACEMENTS & EXCHANGES*\n` +
         summaryData.itemizedReplacements.map((r: any) => {
-          const isRestock = r.reason?.startsWith('RESTOCK:');
+          const isRestock = r.reason?.startsWith('RESTOCK:') || r.reason?.startsWith('Exchanged for');
           const cleanReason = r.reason?.replace('RESTOCK:', '').trim();
           return `• ${isRestock ? '✅ Exchange' : '❌ Defective'}: ${r.itemName} × ${r.quantity}${cleanReason ? ` (${cleanReason})` : ''}`;
         }).join('\n') +
@@ -507,7 +507,7 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                       {activity.type === 'sale'
                         ? `${formatCurrency(activity.amount)} · ${activity.paymentType}`
                         : activity.type === 'replacement'
-                        ? (activity.recipientName?.startsWith('RESTOCK:') ? `Exchange · ${activity.recipientName.replace('RESTOCK:', '').trim()}` : `Replacement${activity.recipientName ? ` - ${activity.recipientName}` : ''}`)
+                        ? ((activity.recipientName?.startsWith('RESTOCK:') || activity.recipientName?.startsWith('Exchanged for')) ? `Exchange · ${activity.recipientName?.replace('RESTOCK:', '').trim()}` : `Replacement${activity.recipientName ? ` - ${activity.recipientName}` : ''}`)
                         : `Gift${activity.recipientName ? ` to ${activity.recipientName}` : ''}`
                       }
                       {' · '}{activity.userName}
@@ -757,7 +757,7 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                   </p>
                   <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
                     {summaryData.itemizedReplacements.map((r: any, idx: number) => {
-                      const isRestock = r.reason?.startsWith('RESTOCK:');
+                      const isRestock = r.reason?.startsWith('RESTOCK:') || r.reason?.startsWith('Exchanged for');
                       const cleanReason = r.reason?.replace('RESTOCK:', '').trim();
                       return (
                         <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: isRestock ? '#059669' : '#9a3412' }}>
