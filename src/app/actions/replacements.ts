@@ -10,6 +10,7 @@ export async function recordReplacement(data: {
   reason?: string;
   exchangeItemId?: string;
   cashCollected?: number;
+  isDefective?: boolean;
 }) {
   try {
     const session = await requireAuth();
@@ -42,6 +43,10 @@ export async function recordReplacement(data: {
     const replacement = await prisma.$transaction(async (tx) => {
       // Create replacement record
       let finalReason = data.reason || 'Defective item replaced';
+      if (data.isDefective === false) {
+        finalReason = `RESTOCK: ${finalReason}`;
+      }
+      
       let exchangeItemName = '';
       if (data.exchangeItemId) {
         const exchangeItem = await tx.item.findUnique({ where: { id: data.exchangeItemId } });
@@ -60,7 +65,15 @@ export async function recordReplacement(data: {
         },
       });
 
-      // Update item stock
+      // If NOT defective, we restock the returned item
+      if (data.isDefective === false) {
+        await tx.item.update({
+          where: { id: data.itemId },
+          data: { stock: { increment: data.quantity } },
+        });
+      }
+
+      // Update exchange item stock (or the same item if no exchange)
       const targetItemId = data.exchangeItemId || data.itemId;
       await tx.item.update({
         where: { id: targetItemId },

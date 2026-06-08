@@ -65,6 +65,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [isExchange, setIsExchange] = useState(false);
   const [exchangeItemId, setExchangeItemId] = useState('');
   const [cashCollected, setCashCollected] = useState<number | ''>('');
+  const [isDefective, setIsDefective] = useState(true);
 
   // Filters
   const [startDate, setStartDate] = useState('');
@@ -132,6 +133,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
       reason: formData.get('reason') as string,
       exchangeItemId: isExchange ? exchangeItemId : undefined,
       cashCollected: isExchange && cashCollected !== '' ? Number(cashCollected) : undefined,
+      isDefective: isExchange ? isDefective : true,
     });
     if (result.success) {
       showToast('Replacement recorded successfully! Stock updated.');
@@ -141,6 +143,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
       setIsExchange(false);
       setExchangeItemId('');
       setCashCollected('');
+      setIsDefective(true);
       router.refresh();
     } else {
       showToast(result.error || 'Failed to record replacement', 'error');
@@ -529,6 +532,20 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
 
           {isExchange && (
             <div style={{ padding: '1rem', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe', marginBottom: '1rem' }}>
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Is the returned item defective? *</label>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input type="radio" name="isDefective" checked={isDefective} onChange={() => setIsDefective(true)} />
+                    Yes (Return to Dealer)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input type="radio" name="isDefective" checked={!isDefective} onChange={() => setIsDefective(false)} />
+                    No (Add back to stock)
+                  </label>
+                </div>
+              </div>
+
               <div className="form-group">
                 <label className="form-label">Item Given to Customer *</label>
                 <select

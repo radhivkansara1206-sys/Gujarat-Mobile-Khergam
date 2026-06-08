@@ -152,10 +152,14 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
             <p style={{ margin: 0, fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', opacity: 0.9 }}>📦 Total Defective Stock to Return to Dealer</p>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', fontWeight: 800 }}>{data.totalQuantity} units</p>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', fontWeight: 800 }}>
+              {data.replacements.filter((r: any) => !r.reason?.startsWith('RESTOCK:')).reduce((sum: number, r: any) => sum + r.quantity, 0)} units
+            </p>
           </div>
           <div style={{ textAlign: 'right', alignSelf: 'flex-end' }}>
-            <p style={{ margin: 0, fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', opacity: 0.9 }}>From {data.totalCount} replacements</p>
+            <p style={{ margin: 0, fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', opacity: 0.9 }}>
+              From {data.replacements.filter((r: any) => !r.reason?.startsWith('RESTOCK:')).length} defective replacements
+            </p>
           </div>
         </div>
       </div>
@@ -177,7 +181,9 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
               </thead>
               <tbody>
                 {Object.values(
-                  data.replacements.reduce((acc: any, r: any) => {
+                  data.replacements
+                    .filter((r: any) => !r.reason?.startsWith('RESTOCK:'))
+                    .reduce((acc: any, r: any) => {
                     const key = r.item?.id || r.itemId;
                     if (!acc[key]) {
                       acc[key] = {
@@ -234,7 +240,7 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
       {/* Replacements Table */}
       <div className="table-container">
         <div className="table-header">
-          <h2 className="section-title">All Replacements ({data.totalCount})</h2>
+          <h2 className="section-title">All Replacements & Exchanges ({data.totalCount})</h2>
         </div>
         {data.replacements.length === 0 ? (
           <div className="empty-state">
@@ -251,7 +257,8 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
                   <th>Item</th>
                   <th>Category</th>
                   <th>Qty</th>
-                  <th>Reason</th>
+                  <th>Type</th>
+                  <th>Reason/Note</th>
                   <th>Logged By</th>
                   {isAdmin && <th>Actions</th>}
                 </tr>
@@ -267,7 +274,21 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
                       </span>
                     </td>
                     <td><strong>{r.quantity}</strong></td>
-                    <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.reason || '—'}</td>
+                    <td>
+                      <span style={{ 
+                        padding: '0.25rem 0.5rem', 
+                        borderRadius: '4px', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 600,
+                        background: r.reason?.startsWith('RESTOCK:') ? '#d1fae5' : '#fee2e2',
+                        color: r.reason?.startsWith('RESTOCK:') ? '#059669' : '#dc2626'
+                      }}>
+                        {r.reason?.startsWith('RESTOCK:') ? 'Restocked' : 'Defective'}
+                      </span>
+                    </td>
+                    <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {r.reason?.replace('RESTOCK:', '').trim() || '—'}
+                    </td>
                     <td>{r.user?.name || 'Unknown'}</td>
                     {isAdmin && (
                       <td>
