@@ -9,6 +9,7 @@ import Modal from '@/components/Modal';
 import { useToast } from '@/components/Toast';
 import { getDailySummaryAction } from '@/app/actions/dashboard';
 import * as htmlToImage from 'html-to-image';
+import SummaryReceipt from '@/components/SummaryReceipt';
 
 interface DashboardClientProps {
   stats: any;
@@ -268,7 +269,7 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
   };
 
   const handleShareImage = async () => {
-    const node = document.getElementById('summary-content');
+    const node = document.getElementById('receipt-export-node');
     if (!node) return;
 
     setGeneratingImage(true);
@@ -780,6 +781,18 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
           )}
         </div>
       </Modal>
+
+      {/* Hidden Receipt Node for Image Export */}
+      {summaryData && (
+        <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1000, pointerEvents: 'none' }}>
+          <SummaryReceipt 
+            summaryData={summaryData}
+            closingDate={closingDate}
+            notes={notes}
+            denoms={getNotesForDisplay() as any}
+          />
+        </div>
+      )}
     </div>
   );
 }
