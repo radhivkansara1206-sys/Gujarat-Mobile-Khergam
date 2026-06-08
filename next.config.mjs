@@ -5,6 +5,52 @@ const withPWA = withPWAInit({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  // Never cache HTML pages — always fetch fresh from network
+  // This prevents stale shells after a new deployment
+  runtimeCaching: [
+    {
+      urlPattern: /^\/(?!_next|api|sw\.js|workbox|manifest\.json|logo\.png|banner\.jpg).*$/,
+      handler: 'NetworkOnly',
+      method: 'GET',
+    },
+    {
+      urlPattern: /^\/api\//,
+      handler: 'NetworkOnly',
+      method: 'GET',
+    },
+    {
+      urlPattern: /^https:\/\/fonts\.googleapis\.com\//,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'google-fonts-stylesheets',
+        expiration: { maxEntries: 4, maxAgeSeconds: 604800 },
+      },
+    },
+    {
+      urlPattern: /^https:\/\/fonts\.gstatic\.com\//,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'google-fonts-webfonts',
+        expiration: { maxEntries: 4, maxAgeSeconds: 31536000 },
+      },
+    },
+    {
+      urlPattern: /\/_next\/static\//,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'next-static',
+        expiration: { maxEntries: 200, maxAgeSeconds: 86400 },
+      },
+    },
+    {
+      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|ico|webp)$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'images',
+        expiration: { maxEntries: 64, maxAgeSeconds: 86400 },
+      },
+    },
+  ],
 });
 
 /** @type {import('next').NextConfig} */

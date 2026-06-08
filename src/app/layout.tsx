@@ -55,27 +55,47 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               // Capture client timezone and offset in cookies for Server Components / Actions
-              const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-              const offset = new Date().getTimezoneOffset();
-              
-              const getCookie = (name) => {
-                const value = "; " + document.cookie;
-                const parts = value.split("; " + name + "=");
-                if (parts.length === 2) return parts.pop().split(";").shift();
-              };
-              
-              if (getCookie('timezone') !== tz || getCookie('timezoneOffset') !== String(offset)) {
-                document.cookie = 'timezone=' + encodeURIComponent(tz) + '; path=/; max-age=31536000; SameSite=Lax';
-                document.cookie = 'timezoneOffset=' + offset + '; path=/; max-age=31536000; SameSite=Lax';
-                window.location.reload();
-              }
+              (function() {
+                var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                var offset = new Date().getTimezoneOffset();
+                
+                var getCookie = function(name) {
+                  var value = "; " + document.cookie;
+                  var parts = value.split("; " + name + "=");
+                  if (parts.length === 2) return parts.pop().split(";").shift();
+                  return null;
+                };
+                
+                // Only set cookies and reload if they don't exist yet (first visit)
+                // Avoids infinite reload loops on timezone mismatch
+                var hasTz = getCookie('timezone');
+                var hasOffset = getCookie('timezoneOffset');
+                if (!hasTz || !hasOffset) {
+                  document.cookie = 'timezone=' + encodeURIComponent(tz) + '; path=/; max-age=31536000; SameSite=Lax';
+                  document.cookie = 'timezoneOffset=' + offset + '; path=/; max-age=31536000; SameSite=Lax';
+                  window.location.reload();
+                } else if (hasTz !== tz) {
+                  // Timezone changed (e.g. user travelled) - update silently without reload
+                  document.cookie = 'timezone=' + encodeURIComponent(tz) + '; path=/; max-age=31536000; SameSite=Lax';
+                  document.cookie = 'timezoneOffset=' + offset + '; path=/; max-age=31536000; SameSite=Lax';
+                }
 
-              window.deferredPrompt = null;
-              window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                window.deferredPrompt = e;
-                window.dispatchEvent(new Event('pwa-prompt-ready'));
-              });
+                // PWA install prompt
+                window.deferredPrompt = null;
+                window.addEventListener('beforeinstallprompt', function(e) {
+                  e.preventDefault();
+                  window.deferredPrompt = e;
+                  window.dispatchEvent(new Event('pwa-prompt-ready'));
+                });
+
+                // Auto-refresh page when a new service worker is installed
+                // This ensures users always get the latest deployment
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    window.location.reload();
+                  });
+                }
+              })();
             `,
           }}
         />
