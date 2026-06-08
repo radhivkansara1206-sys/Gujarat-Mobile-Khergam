@@ -38,3 +38,21 @@ export async function dismissNotification(id: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function dismissAllNotifications() {
+  try {
+    const session = await getSession();
+    if (!session) return { success: false, error: 'Unauthorized' };
+
+    await prisma.notification.updateMany({
+      where: { isRead: false },
+      data: { isRead: true }
+    });
+
+    revalidatePath('/', 'layout');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to dismiss all notifications:', error);
+    return { success: false, error: error.message };
+  }
+}

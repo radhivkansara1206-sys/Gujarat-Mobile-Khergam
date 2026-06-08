@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Modal from '@/components/Modal';
 import { updateItem, dismissItemAlert, dismissAllItemAlerts } from '@/app/actions/items';
-import { dismissNotification } from '@/app/actions/notifications';
+import { dismissNotification, dismissAllNotifications } from '@/app/actions/notifications';
 import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
@@ -48,12 +48,23 @@ export default function AlertsClient({ items, notifications = [], isAdmin }: Ale
 
   const handleDismissAll = async () => {
     setLoading(true);
-    const result = await dismissAllItemAlerts();
-    if (result.success) {
-      showToast('All alerts dismissed globally');
+    let successCount = 0;
+    
+    if (activeItems.length > 0) {
+      const itemResult = await dismissAllItemAlerts();
+      if (itemResult.success) successCount++;
+    }
+    
+    if (notifications.length > 0) {
+      const notifResult = await dismissAllNotifications();
+      if (notifResult.success) successCount++;
+    }
+    
+    if (successCount > 0) {
+      showToast('All alerts and notifications dismissed');
       router.refresh();
     } else {
-      showToast(result.error || 'Failed to dismiss alerts', 'error');
+      showToast('Nothing to dismiss, or action failed', 'error');
     }
     setLoading(false);
   };
@@ -86,9 +97,11 @@ export default function AlertsClient({ items, notifications = [], isAdmin }: Ale
           <h1 className="page-title">Alerts & Notifications</h1>
           <p className="page-subtitle">{activeItems.length} items need attention, {notifications.length} unresolved notifications</p>
         </div>
-        {activeItems.length > 0 && (
+        {(activeItems.length > 0 || notifications.length > 0) && (
           <div className="header-actions">
-            <button className="btn btn-secondary" onClick={handleDismissAll}>Dismiss All</button>
+            <button className="btn btn-secondary" onClick={handleDismissAll} disabled={loading}>
+              {loading ? <span className="spinner"></span> : 'Dismiss All'}
+            </button>
           </div>
         )}
       </div>
