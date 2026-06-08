@@ -166,6 +166,8 @@ export default function DashboardClient({
         
       if (reg.status === 'CLOSED') {
         registerText += `• Closing Cash: ${formatCurrency(reg.closingBalance || 0)}\n`;
+      } else {
+        registerText += `• Expected Closing Cash: ${formatCurrency(summaryData.expectedCash || 0)}\n`;
       }
       
       let denoms: Record<string, number> | null = null;
@@ -613,13 +615,20 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                       </div>
                       {summaryData.register.openingNotes && renderNotesSummary(summaryData.register.openingNotes)}
                     </div>
-                    {summaryData.register.status === 'CLOSED' && (
+                    {summaryData.register.status === 'CLOSED' ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 2', borderTop: '1px solid rgba(245, 158, 11, 0.15)', paddingTop: '0.25rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                           <span style={{ color: 'var(--text-secondary)' }}>Closing Balance:</span>
                           <span style={{ fontWeight: 600 }}>{formatCurrency(summaryData.register.closingBalance || 0)}</span>
                         </div>
                         {summaryData.register.closingNotes && renderNotesSummary(summaryData.register.closingNotes)}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 2', borderTop: '1px solid rgba(245, 158, 11, 0.15)', paddingTop: '0.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Expected Closing Balance:</span>
+                          <span style={{ fontWeight: 600 }}>{formatCurrency(summaryData.expectedCash || 0)}</span>
+                        </div>
                       </div>
                     )}
                     {summaryData.register.status === 'CLOSED' && summaryData.register.discrepancyAmount !== 0 && (

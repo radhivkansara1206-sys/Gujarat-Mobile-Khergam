@@ -186,10 +186,15 @@ export default function SummaryReceipt({ summaryData, closingDate, notes, denoms
                     <span>Opening Cash:</span>
                     <span style={{ fontWeight: 600 }}>{formatCurrency(summaryData.register.openingBalance)}</span>
                   </div>
-                  {summaryData.register.status === 'CLOSED' && (
+                  {summaryData.register.status === 'CLOSED' ? (
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>Closing Cash:</span>
                       <span style={{ fontWeight: 600 }}>{formatCurrency(summaryData.register.closingBalance || 0)}</span>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Expected Closing Cash:</span>
+                      <span style={{ fontWeight: 600 }}>{formatCurrency(summaryData.expectedCash || 0)}</span>
                     </div>
                   )}
                   {summaryData.register.discrepancyAmount !== 0 && summaryData.register.status === 'CLOSED' && (
