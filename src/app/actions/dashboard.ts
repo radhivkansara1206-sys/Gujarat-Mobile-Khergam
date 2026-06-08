@@ -222,8 +222,16 @@ export async function getDailySummaryAction(dateStr: string) {
       where: {
         createdAt: { gte: targetDate, lt: nextDay },
       },
+      include: {
+        item: { select: { name: true } }
+      }
     });
     const totalReplacements = replacements.reduce((sum, r) => sum + r.quantity, 0);
+    const itemizedReplacements = replacements.map(r => ({
+      itemName: r.item.name,
+      quantity: r.quantity,
+      reason: r.reason || '',
+    }));
 
     // Fetch ROJMEL for the day
     let register = await prisma.cashRegister.findFirst({
@@ -302,6 +310,7 @@ export async function getDailySummaryAction(dateStr: string) {
         salesTotal: salesCash + salesOnline,
         totalExpenses,
         totalReplacements,
+        itemizedReplacements,
         salesCount: sales.filter(s => s.paymentType !== 'gift').length,
         expensesCount: expenses.length,
         closedBy: session.name,

@@ -236,6 +236,19 @@ export default function DashboardClient({
       giftsText = `\n🎁 *GIFTS GIVEN TODAY*\n• No gifts recorded today.\n`;
     }
 
+    let replacementsText = '';
+    if (summaryData.itemizedReplacements && summaryData.itemizedReplacements.length > 0) {
+      replacementsText = `\n🔄 *REPLACEMENTS & EXCHANGES*\n` +
+        summaryData.itemizedReplacements.map((r: any) => {
+          const isRestock = r.reason?.startsWith('RESTOCK:');
+          const cleanReason = r.reason?.replace('RESTOCK:', '').trim();
+          return `• ${isRestock ? '✅ Exchange' : '❌ Defective'}: ${r.itemName} × ${r.quantity}${cleanReason ? ` (${cleanReason})` : ''}`;
+        }).join('\n') +
+        `\n`;
+    } else if (summaryData.totalReplacements > 0) {
+      replacementsText = `\n🔄 *REPLACEMENTS*\n• Replaced Stock: ${summaryData.totalReplacements} units\n`;
+    }
+
     return `📱 *GUJARAT MOBILE KHERGAM*
 📊 *Daily Business Summary*
 📅 *Date:* ${formattedDate}
@@ -245,10 +258,7 @@ export default function DashboardClient({
 • Cash Sales: ${formatCurrency(summaryData.salesCash)}
 • Online Sales: ${formatCurrency(summaryData.salesOnline)}
 • *Total Sales:* ${formatCurrency(summaryData.salesTotal)} (${summaryData.salesCount} bills)
-${itemsSoldText}${expensesText}${giftsText}${registerText}
-🔄 *REPLACEMENTS*
-• Replaced Stock: ${summaryData.totalReplacements} units
-
+${itemsSoldText}${expensesText}${giftsText}${registerText}${replacementsText}
 📈 *NET SUMMARY*
 • Expected Cash: ${formatCurrency(summaryData.expectedCash)}
 • *Net Revenue:* ${formatCurrency(summaryData.salesTotal - summaryData.totalExpenses)}
@@ -497,7 +507,7 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                       {activity.type === 'sale'
                         ? `${formatCurrency(activity.amount)} · ${activity.paymentType}`
                         : activity.type === 'replacement'
-                        ? `Replacement${activity.recipientName ? ` - ${activity.recipientName}` : ''}`
+                        ? (activity.recipientName?.startsWith('RESTOCK:') ? `Exchange · ${activity.recipientName.replace('RESTOCK:', '').trim()}` : `Replacement${activity.recipientName ? ` - ${activity.recipientName}` : ''}`)
                         : `Gift${activity.recipientName ? ` to ${activity.recipientName}` : ''}`
                       }
                       {' · '}{activity.userName}
@@ -740,12 +750,32 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
               </div>
 
               {/* Replacements Info */}
-              {summaryData.totalReplacements > 0 && (
+              {summaryData.itemizedReplacements && summaryData.itemizedReplacements.length > 0 ? (
+                <div style={{ marginBottom: '1.25rem', padding: '1rem', background: '#fff7ed', border: '1px solid #ffedd5', borderRadius: '12px' }}>
+                  <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#c2410c', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span>🔄</span> Replacements & Exchanges
+                  </p>
+                  <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
+                    {summaryData.itemizedReplacements.map((r: any, idx: number) => {
+                      const isRestock = r.reason?.startsWith('RESTOCK:');
+                      const cleanReason = r.reason?.replace('RESTOCK:', '').trim();
+                      return (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: isRestock ? '#059669' : '#9a3412' }}>
+                          <span style={{ fontWeight: 500 }}>
+                            {isRestock ? '✅ Exchange' : '❌ Defective'}: {r.itemName} <span style={{ opacity: 0.8 }}>× {r.quantity}</span>
+                          </span>
+                          {cleanReason && <span style={{ fontSize: '0.75rem', fontStyle: 'italic', textAlign: 'right', whiteSpace: 'nowrap', opacity: 0.8 }}>{cleanReason}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : summaryData.totalReplacements > 0 ? (
                 <div style={{ padding: '0.75rem 1rem', background: '#fff7ed', border: '1px solid #ffedd5', borderRadius: '8px', fontSize: '0.85rem', color: '#c2410c', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
                   <span style={{ fontSize: '1.1rem' }}>🔄</span>
                   <span><strong>{summaryData.totalReplacements} units</strong> defective stock replaced today.</span>
                 </div>
-              )}
+              ) : null}
 
 
 
