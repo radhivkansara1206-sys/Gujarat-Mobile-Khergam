@@ -158,8 +158,8 @@ export default function DashboardClient({
     let registerText = '';
     if (summaryData.register) {
       const reg = summaryData.register;
-      const cashAmount = reg.status === 'CLOSED' ? (reg.closingBalance || 0) : reg.openingBalance;
-      const notesJson = reg.status === 'CLOSED' ? reg.closingNotes : reg.openingNotes;
+      const cashAmount = reg.status === 'CLOSED' ? (reg.closingBalance || 0) : (summaryData.expectedCash || 0);
+      const notesJson = reg.status === 'CLOSED' ? reg.closingNotes : null;
       
       registerText = `\n━━━━━━━━━━━━━━━━━━━━\n💵 *ROJMEL REGISTER DETAILS*\n` +
         `• Opening Cash: ${formatCurrency(reg.openingBalance)}\n`;
