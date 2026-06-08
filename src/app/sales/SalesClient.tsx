@@ -288,7 +288,9 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                       </span>
                     </td>
                     <td className="text-secondary">
-                      {sale.paymentType === 'gift' ? (sale.notes || '—') : (sale.referenceNumber || '—')}
+                      {sale.referenceNumber && <div style={{ marginBottom: '2px' }}>{sale.referenceNumber}</div>}
+                      {sale.notes && <div style={{ fontSize: '0.85rem', fontStyle: 'italic' }}>{sale.notes}</div>}
+                      {!sale.referenceNumber && !sale.notes && '—'}
                     </td>
                     <td className="text-secondary">{sale.user?.name}</td>
                     {isAdmin && (
