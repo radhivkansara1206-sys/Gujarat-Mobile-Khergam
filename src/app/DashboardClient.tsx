@@ -166,12 +166,28 @@ export default function DashboardClient({
       }
       
       if (denoms && Object.values(denoms).some(v => Number(v) > 0)) {
+        let totalAmount = 0;
         const parts = Object.entries(denoms)
           .filter(([_, val]) => Number(val) > 0)
-          .map(([k, v]) => `• ${k === 'coins' ? 'Coins' : '\u20b9' + k} × ${v}`);
+          .map(([k, v]) => {
+            const count = Number(v);
+            if (k === 'coins') {
+              totalAmount += count;
+              return `Coins     = ₹${count.toLocaleString('en-IN')}`;
+            } else {
+              const val = Number(k);
+              const lineTotal = val * count;
+              totalAmount += lineTotal;
+              return `₹${k.padEnd(3, ' ')} × ${String(count).padEnd(2, ' ')} = ₹${lineTotal.toLocaleString('en-IN')}`;
+            }
+          });
         
         registerText += `\n📋 *TODAY'S CASH DENOMINATIONS*\n` +
-          `${parts.join('\n')}\n`;
+          `\`\`\`\n` +
+          `${parts.join('\n')}\n` +
+          `--------------\n` +
+          `TOTAL = ₹${totalAmount.toLocaleString('en-IN')}\n` +
+          `\`\`\`\n`;
       }
       
       if (reg.discrepancyAmount !== 0 && reg.status === 'CLOSED') {
