@@ -63,6 +63,7 @@ export default function DashboardClient({
   const { showToast } = useToast();
 
   const [isAlertDismissed, setIsAlertDismissed] = useState(false);
+  const [isPatchNoteDismissed, setIsPatchNoteDismissed] = useState(false);
 
   const autoFillDenominations = (amount: number) => {
     let remaining = amount;
@@ -96,6 +97,9 @@ export default function DashboardClient({
     if (dismissedUntil && (Number(dismissedUntil) === -1 || Number(dismissedUntil) > Date.now())) {
       setIsAlertDismissed(true);
     }
+    if (localStorage.getItem('patchNoteDismissedV1')) {
+      setIsPatchNoteDismissed(true);
+    }
   }, []);
 
   const handleDismissBanner = (e: React.MouseEvent, hours: number) => {
@@ -104,6 +108,11 @@ export default function DashboardClient({
     localStorage.setItem('dashboardAlertDismissed', String(expiry));
     setIsAlertDismissed(true);
     window.dispatchEvent(new Event('alerts-dismissed'));
+  };
+
+  const handleDismissPatchNote = () => {
+    localStorage.setItem('patchNoteDismissedV1', 'true');
+    setIsPatchNoteDismissed(true);
   };
 
   useEffect(() => {
@@ -335,6 +344,23 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
         <h2 style={{ fontSize: 'clamp(1.25rem, 3vw, 1.5rem)', fontWeight: 700, margin: 0, marginBottom: '0.25rem' }}>Welcome to Gujarat Mobile Accessories! 📱</h2>
         <p style={{ opacity: 0.9, margin: 0, fontSize: 'clamp(0.875rem, 2vw, 1rem)' }}>Your central hub for managing inventory, tracking sales, and growing your business.</p>
       </div>
+
+      {/* Patch Notes Banner */}
+      {!isPatchNoteDismissed && (
+        <div className="alert-banner-container" style={{ position: 'relative', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="alert-banner" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e3a8a', marginBottom: 0, display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flexWrap: 'wrap', padding: '1rem' }}>
+            <span style={{ fontSize: '1.5rem', marginTop: '-2px' }}>✨</span>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: '#1e40af' }}>New Feature: ROJMEL (Cash Drawer) integration</h3>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e3a8a', opacity: 0.9 }}>
+                You can now track exact cash movements and opening/closing balances! 
+                <strong> How to use:</strong> Ensure you "Open Drawer" at the start of your day to log sales, and "Close Drawer" at the end of the day to generate your Daily Summary. Check the <Link href="/register" style={{textDecoration: 'underline', color: '#1d4ed8'}}>ROJMEL page</Link> to view detailed ledger records.
+              </p>
+            </div>
+            <button onClick={handleDismissPatchNote} className="btn btn-ghost btn-sm" style={{ padding: '0.3rem', width: '30px', height: '30px', background: 'rgba(30, 58, 138, 0.1)', color: '#1e3a8a' }} title="Dismiss">✕</button>
+          </div>
+        </div>
+      )}
 
       {/* Drawer Status Banner */}
       {!registerStatus?.isOpen ? (

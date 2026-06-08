@@ -13,6 +13,7 @@ export async function recordSale(formData: FormData) {
 
     const itemId = formData.get('itemId') as string;
     const quantity = parseInt(formData.get('quantity') as string);
+    const paidAmount = parseFloat(formData.get('paidAmount') as string);
     const paymentType = formData.get('paymentType') as string;
     const referenceNumber = (formData.get('referenceNumber') as string) || '';
     const notes = (formData.get('notes') as string) || '';
@@ -67,7 +68,7 @@ export async function recordSale(formData: FormData) {
           userId: session.userId,
           quantity,
           unitPrice: item.sellingPrice,
-          totalAmount: item.sellingPrice * quantity,
+          totalAmount: !isNaN(paidAmount) ? paidAmount : item.sellingPrice * quantity,
           paymentType,
           referenceNumber,
           notes,

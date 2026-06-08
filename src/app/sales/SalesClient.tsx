@@ -58,6 +58,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
     }
   }, []);
   const [quantity, setQuantity] = useState(1);
+  const [customPaidAmount, setCustomPaidAmount] = useState<number | ''>('');
   const [paymentType, setPaymentType] = useState<'cash' | 'online' | 'gift'>('cash');
 
   // Filters
@@ -315,7 +316,12 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
               name="itemId"
               className="form-select"
               value={selectedItem || ''}
-              onChange={e => { setSelectedItem(e.target.value); setQuantity(1); }}
+              onChange={e => { 
+                setSelectedItem(e.target.value); 
+                setQuantity(1); 
+                const itm = items.find(i => i.id === e.target.value);
+                setCustomPaidAmount(itm ? itm.sellingPrice : '');
+              }}
               required
             >
               <option value="">Choose an item...</option>
@@ -341,7 +347,11 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                 min="1"
                 max={selectedItemData?.stock || 999}
                 value={quantity}
-                onChange={e => setQuantity(parseInt(e.target.value) || 1)}
+                onChange={e => {
+                  const q = parseInt(e.target.value) || 1;
+                  setQuantity(q);
+                  if (selectedItemData) setCustomPaidAmount(q * selectedItemData.sellingPrice);
+                }}
                 required
               />
               {selectedItemData && (
@@ -349,8 +359,16 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
               )}
             </div>
             <div className="form-group">
-              <label className="form-label">Total Amount</label>
-              <div className="form-static-value">{formatCurrency(total)}</div>
+              <label className="form-label">Paid Amount (₹)</label>
+              <input
+                name="paidAmount"
+                type="number"
+                className="form-input"
+                min="0"
+                value={customPaidAmount}
+                onChange={e => setCustomPaidAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                required
+              />
             </div>
           </div>
 
