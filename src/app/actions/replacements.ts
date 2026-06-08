@@ -43,10 +43,8 @@ export async function recordReplacement(data: {
 
     const replacement = await prisma.$transaction(async (tx) => {
       // Create replacement record
-      let finalReason = data.reason || 'Defective item replaced';
-      if (data.isDefective === false) {
-        finalReason = `RESTOCK: ${finalReason}`;
-      }
+      let baseReason = data.reason || (data.exchangeItemId ? '' : 'Defective item replaced');
+      let finalReason = baseReason;
       
       let exchangeItemName = '';
       if (data.exchangeItemId) {
@@ -55,6 +53,10 @@ export async function recordReplacement(data: {
           exchangeItemName = exchangeItem.name;
           finalReason = `Exchanged for ${exchangeItem.name}. ${data.reason || ''}`.trim();
         }
+      }
+
+      if (data.isDefective === false) {
+        finalReason = `RESTOCK: ${finalReason}`;
       }
 
       const newReplacement = await tx.replacement.create({
@@ -107,10 +109,13 @@ export async function recordReplacement(data: {
       }
 
       // Create admin notification
+      let actionText = data.exchangeItemId ? `exchanged` : `replaced`;
+      let reasonText = data.reason || (data.isDefective === false ? 'Item returned to stock (Not Defective)' : 'Defective item');
+      
       await tx.notification.create({
         data: {
           type: 'replacement',
-          message: `${session.name} replaced ${data.quantity}x ${item.name} (${item.category.name}) — Reason: ${data.reason || 'Defective item'}`,
+          message: `${session.name} ${actionText} ${data.quantity}x ${item.name} (${item.category.name}) — Reason: ${reasonText}`,
           userId: session.id,
         },
       });
