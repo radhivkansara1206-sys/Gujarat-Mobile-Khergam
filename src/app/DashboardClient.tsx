@@ -277,10 +277,6 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
       const dataUrl = await htmlToImage.toPng(node, {
         backgroundColor: '#ffffff',
         pixelRatio: 2, // High quality
-        style: {
-          padding: '16px',
-          borderRadius: '0px',
-        }
       });
 
       // Try native share API for mobile
