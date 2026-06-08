@@ -3,6 +3,8 @@
 import { prisma } from '@/lib/prisma';
 import { requireAuth, getSession } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { getLocalDayBounds } from '@/lib/utils';
 
 export async function recordSale(formData: FormData) {
   try {
@@ -19,6 +21,35 @@ export async function recordSale(formData: FormData) {
     if (!quantity || quantity <= 0) return { success: false, error: 'Quantity must be greater than 0' };
     if (!paymentType || !['cash', 'online', 'gift'].includes(paymentType)) {
       return { success: false, error: 'Payment type must be cash, online, or gift' };
+    }
+
+    const dateStr = formData.get('date') as string;
+    let createdAt = new Date();
+    
+    if (dateStr) {
+      createdAt = new Date(dateStr);
+    }
+    
+    // Automated validation logging
+    console.log(`[Validation Log] Client date payload received: "${dateStr}"`);
+    console.log(`[Validation Log] Storing in database as (UTC): "${createdAt.toISOString()}"`);
+
+    const cookieStore = cookies();
+    const offsetStr = cookieStore.get('timezoneOffset')?.value;
+    const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
+
+    const getLocalDateStr = (date: Date, offset: number) => {
+      const localTime = new Date(date.getTime() - offset * 60000);
+      return `${localTime.getUTCFullYear()}-${String(localTime.getUTCMonth() + 1).padStart(2, '0')}-${String(localTime.getUTCDate()).padStart(2, '0')}`;
+    };
+
+    const saleDateStr = getLocalDateStr(createdAt, offsetMinutes);
+    const todayDateStr = getLocalDateStr(new Date(), offsetMinutes);
+    const isPastDate = saleDateStr !== todayDateStr;
+
+    if (paymentType === 'cash' && !isPastDate) {
+      const openRegister = await prisma.cashRegister.findFirst({ where: { status: 'OPEN' } });
+      if (!openRegister) return { success: false, error: 'Cannot process cash sale for today: Drawer is closed. Please open the ROJMEL first.' };
     }
 
     // Atomic transaction: create sale + deduct stock
@@ -40,6 +71,7 @@ export async function recordSale(formData: FormData) {
           paymentType,
           referenceNumber,
           notes,
+          createdAt,
         },
       });
 
@@ -52,10 +84,7 @@ export async function recordSale(formData: FormData) {
       return sale;
     });
 
-    revalidatePath('/sales');
-    revalidatePath('/inventory');
-    revalidatePath('/');
-    revalidatePath('/alerts');
+    revalidatePath('/', 'layout');
     return { success: true, data: result };
   } catch (error: any) {
     console.error('Record sale error:', error);
@@ -72,13 +101,17 @@ export async function getSales(filters?: {
   try {
     const where: any = {};
     
+    const cookieStore = cookies();
+    const offsetStr = cookieStore.get('timezoneOffset')?.value;
+    const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
+
     if (filters?.startDate) {
-      where.createdAt = { ...where.createdAt, gte: new Date(filters.startDate) };
+      const bounds = getLocalDayBounds(filters.startDate, offsetMinutes);
+      where.createdAt = { ...where.createdAt, gte: bounds.start };
     }
     if (filters?.endDate) {
-      const endDate = new Date(filters.endDate);
-      endDate.setHours(23, 59, 59, 999);
-      where.createdAt = { ...where.createdAt, lte: endDate };
+      const bounds = getLocalDayBounds(filters.endDate, offsetMinutes);
+      where.createdAt = { ...where.createdAt, lte: bounds.end };
     }
     if (filters?.paymentType && filters.paymentType !== 'all') {
       where.paymentType = filters.paymentType;
@@ -145,10 +178,7 @@ export async function deleteSale(saleId: string) {
       return true;
     });
 
-    revalidatePath('/sales');
-    revalidatePath('/inventory');
-    revalidatePath('/');
-    revalidatePath('/alerts');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: any) {
     console.error('Delete sale error:', error);

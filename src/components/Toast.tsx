@@ -47,7 +47,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               {toast.type === 'info' && 'ℹ'}
             </span>
             <span className="toast-message">{toast.message}</span>
-            <button className="toast-close" onClick={() => removeToast(toast.id)}>×</button>
+            <button className="toast-close" onClick={() => removeToast(toast.id)} aria-label="Close toast">x</button>
           </div>
         ))}
       </div>

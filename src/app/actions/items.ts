@@ -41,6 +41,7 @@ export async function createItem(formData: FormData) {
     const name = formData.get('name') as string;
     const brand = (formData.get('brand') as string) || '';
     const model = (formData.get('model') as string) || '';
+    const subCategory = (formData.get('subCategory') as string) || '';
     const purchasePrice = parseFloat(formData.get('purchasePrice') as string) || 0;
     const sellingPrice = parseFloat(formData.get('sellingPrice') as string) || 0;
     const stock = parseInt(formData.get('stock') as string) || 0;
@@ -57,6 +58,7 @@ export async function createItem(formData: FormData) {
         name: name.trim(),
         brand: brand.trim(),
         model: model.trim(),
+        subCategory: subCategory.trim(),
         purchasePrice,
         sellingPrice,
         stock,
@@ -64,10 +66,7 @@ export async function createItem(formData: FormData) {
       },
     });
 
-    revalidatePath(`/inventory/${categoryId}`);
-    revalidatePath('/inventory');
-    revalidatePath('/');
-    revalidatePath('/alerts');
+    revalidatePath('/', 'layout');
     return { success: true, data: item };
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
@@ -84,6 +83,7 @@ export async function updateItem(id: string, formData: FormData) {
     const name = formData.get('name') as string;
     const brand = formData.get('brand') as string;
     const model = formData.get('model') as string;
+    const subCategory = formData.get('subCategory') as string;
     const purchasePrice = parseFloat(formData.get('purchasePrice') as string);
     const sellingPrice = parseFloat(formData.get('sellingPrice') as string);
     const stock = parseInt(formData.get('stock') as string);
@@ -97,18 +97,17 @@ export async function updateItem(id: string, formData: FormData) {
         name: name.trim(),
         brand: brand?.trim() || '',
         model: model?.trim() || '',
+        subCategory: subCategory?.trim() || '',
         ...(isNaN(purchasePrice) ? {} : { purchasePrice }),
         ...(isNaN(sellingPrice) ? {} : { sellingPrice }),
         ...(isNaN(stock) ? {} : { stock }),
         ...(isNaN(lowStockThreshold) ? {} : { lowStockThreshold }),
+        isAlertDismissed: false, // Reset dismiss state on any update
       },
       include: { category: true },
     });
 
-    revalidatePath(`/inventory/${item.categoryId}`);
-    revalidatePath('/inventory');
-    revalidatePath('/');
-    revalidatePath('/alerts');
+    revalidatePath('/', 'layout');
     return { success: true, data: item };
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
@@ -128,10 +127,7 @@ export async function deleteItem(id: string) {
       data: { isActive: false },
     });
 
-    revalidatePath(`/inventory/${item.categoryId}`);
-    revalidatePath('/inventory');
-    revalidatePath('/');
-    revalidatePath('/alerts');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
@@ -153,5 +149,55 @@ export async function getAllItemsForSelect() {
   } catch (error) {
     console.error('Get items for select error:', error);
     return { success: false, error: 'Failed to fetch items' };
+  }
+}
+
+export async function dismissItemAlert(id: string) {
+  try {
+    await requireAuth();
+    const item = await prisma.item.update({
+      where: { id },
+      data: { isAlertDismissed: true },
+    });
+    
+    revalidatePath('/', 'layout');
+    return { success: true };
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return { success: false, error: error.message };
+    }
+    console.error('Dismiss alert error:', error);
+    return { success: false, error: 'Failed to dismiss alert' };
+  }
+}
+
+export async function dismissAllItemAlerts() {
+  try {
+    await requireAuth();
+    
+    // Fetch all active items
+    const items = await prisma.item.findMany({
+      where: { isActive: true },
+      select: { id: true, stock: true, lowStockThreshold: true }
+    });
+    
+    // Filter items where stock <= lowStockThreshold
+    const itemsToDismiss = items.filter(i => i.stock <= i.lowStockThreshold).map(i => i.id);
+    
+    if (itemsToDismiss.length > 0) {
+      await prisma.item.updateMany({
+        where: { id: { in: itemsToDismiss } },
+        data: { isAlertDismissed: true },
+      });
+    }
+    
+    revalidatePath('/', 'layout');
+    return { success: true };
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return { success: false, error: error.message };
+    }
+    console.error('Dismiss all alerts error:', error);
+    return { success: false, error: 'Failed to dismiss all alerts' };
   }
 }

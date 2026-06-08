@@ -3,6 +3,8 @@
 import { prisma } from '@/lib/prisma';
 import { requireAuth, getSession } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { getLocalDayBounds } from '@/lib/utils';
 
 export async function recordExpense(formData: FormData) {
   try {
@@ -21,14 +23,35 @@ export async function recordExpense(formData: FormData) {
     // Date override
     const dateStr = formData.get('date') as string;
     let createdAt = new Date();
+    
     if (dateStr) {
-      // Create a Date object from the YYYY-MM-DD input, keeping the local time
-      const [year, month, day] = dateStr.split('-').map(Number);
-      createdAt = new Date(year, month - 1, day, 12, 0, 0); // Noon to avoid timezone issues
+      createdAt = new Date(dateStr);
     }
+    
+    // Automated validation logging
+    console.log(`[Validation Log] Client date payload received (Expense): "${dateStr}"`);
+    console.log(`[Validation Log] Storing in database as (UTC) (Expense): "${createdAt.toISOString()}"`);
+
+    const cookieStore = cookies();
+    const offsetStr = cookieStore.get('timezoneOffset')?.value;
+    const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
+
+    const getLocalDateStr = (date: Date, offset: number) => {
+      const localTime = new Date(date.getTime() - offset * 60000);
+      return `${localTime.getUTCFullYear()}-${String(localTime.getUTCMonth() + 1).padStart(2, '0')}-${String(localTime.getUTCDate()).padStart(2, '0')}`;
+    };
+
+    const expenseDateStr = getLocalDateStr(createdAt, offsetMinutes);
+    const todayDateStr = getLocalDateStr(new Date(), offsetMinutes);
+    const isPastDate = expenseDateStr !== todayDateStr;
 
     if (isNaN(amount) || amount <= 0) return { success: false, error: 'Valid amount is required' };
     if (!category) return { success: false, error: 'Category is required' };
+
+    if (!isPastDate) {
+      const openRegister = await prisma.cashRegister.findFirst({ where: { status: 'OPEN' } });
+      if (!openRegister) return { success: false, error: 'Cannot record expense for today: Drawer is closed. Please open the ROJMEL first.' };
+    }
 
     const expense = await prisma.expense.create({
       data: {
@@ -40,8 +63,7 @@ export async function recordExpense(formData: FormData) {
       }
     });
 
-    revalidatePath('/expenses');
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return { success: true, data: expense };
   } catch (error: any) {
     console.error('Record expense error:', error);
@@ -59,13 +81,19 @@ export async function getExpenses(filters?: { startDate?: string; endDate?: stri
 
     let where: any = {};
 
+    const cookieStore = cookies();
+    const offsetStr = cookieStore.get('timezoneOffset')?.value;
+    const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
+
     if (filters?.startDate || filters?.endDate) {
       where.createdAt = {};
-      if (filters.startDate) where.createdAt.gte = new Date(filters.startDate);
+      if (filters.startDate) {
+        const bounds = getLocalDayBounds(filters.startDate, offsetMinutes);
+        where.createdAt.gte = bounds.start;
+      }
       if (filters.endDate) {
-        const end = new Date(filters.endDate);
-        end.setHours(23, 59, 59, 999);
-        where.createdAt.lte = end;
+        const bounds = getLocalDayBounds(filters.endDate, offsetMinutes);
+        where.createdAt.lte = bounds.end;
       }
     }
 
@@ -108,8 +136,7 @@ export async function deleteExpense(id: string) {
       where: { id }
     });
 
-    revalidatePath('/expenses');
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: any) {
     console.error('Delete expense error:', error);

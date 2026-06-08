@@ -62,11 +62,7 @@ export async function recordReplacement(data: {
       return newReplacement;
     });
 
-    revalidatePath('/');
-    revalidatePath('/inventory');
-    revalidatePath('/sales');
-    revalidatePath('/replacements');
-    revalidatePath(`/inventory/${item.categoryId}`);
+    revalidatePath('/', 'layout');
 
     return { success: true, data: replacement };
   } catch (error: any) {
@@ -156,7 +152,7 @@ export async function markNotificationsRead() {
       data: { isRead: true },
     });
 
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Failed to mark notifications as read' };
@@ -199,9 +195,7 @@ export async function restoreReplacement(replacementId: string) {
       return replacement;
     });
 
-    revalidatePath('/');
-    revalidatePath('/inventory');
-    revalidatePath('/replacements');
+    revalidatePath('/', 'layout');
     return { success: true, data: result };
   } catch (error: any) {
     console.error('Restore replacement error:', error);
@@ -216,8 +210,7 @@ export async function deleteReplacement(replacementId: string) {
 
     await prisma.replacement.delete({ where: { id: replacementId } });
 
-    revalidatePath('/');
-    revalidatePath('/replacements');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: any) {
     console.error('Delete replacement error:', error);

@@ -2,13 +2,18 @@
 
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { cookies } from 'next/headers';
+import { getLocalDayBounds, getTodayBounds } from '@/lib/utils';
 
 export async function getDashboardStats() {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const cookieStore = cookies();
+    const offsetStr = cookieStore.get('timezoneOffset')?.value;
+    const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
+
+    const bounds = getTodayBounds(offsetMinutes);
+    const today = bounds.start;
+    const tomorrow = bounds.end;
 
     // Get total items and stock
     const itemStats = await prisma.item.aggregate({
@@ -41,10 +46,10 @@ export async function getDashboardStats() {
     // Manual filter for SQLite compatibility (no column comparison in where)
     const allActiveItems = await prisma.item.findMany({
       where: { isActive: true },
-      select: { stock: true, lowStockThreshold: true },
+      select: { stock: true, lowStockThreshold: true, isAlertDismissed: true },
     });
-    const lowStockCount = allActiveItems.filter(i => i.stock > 0 && i.stock <= i.lowStockThreshold).length;
-    const outOfStockCount = allActiveItems.filter(i => i.stock <= 0).length;
+    const lowStockCount = allActiveItems.filter(i => !i.isAlertDismissed && i.stock > 0 && i.stock <= i.lowStockThreshold).length;
+    const outOfStockCount = allActiveItems.filter(i => !i.isAlertDismissed && i.stock <= 0).length;
 
     return {
       success: true,
@@ -134,8 +139,8 @@ export async function getLowStockItems() {
       orderBy: { stock: 'asc' },
     });
 
-    // Filter items where stock <= lowStockThreshold
-    const lowStockItems = items.filter(i => i.stock <= i.lowStockThreshold);
+    // Filter items where stock <= lowStockThreshold and not dismissed
+    const lowStockItems = items.filter(i => !i.isAlertDismissed && i.stock <= i.lowStockThreshold);
 
     return { success: true, data: lowStockItems };
   } catch (error) {
@@ -147,10 +152,13 @@ export async function getLowStockItems() {
 export async function getDailySummaryAction(dateStr: string) {
   try {
     const session = await requireAuth();
-    const targetDate = new Date(dateStr);
-    targetDate.setHours(0, 0, 0, 0);
-    const nextDay = new Date(targetDate);
-    nextDay.setDate(nextDay.getDate() + 1);
+    const cookieStore = cookies();
+    const offsetStr = cookieStore.get('timezoneOffset')?.value;
+    const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
+
+    const bounds = getLocalDayBounds(dateStr, offsetMinutes);
+    const targetDate = bounds.start;
+    const nextDay = bounds.end;
 
     // Sales for target date
     const sales = await prisma.sale.findMany({
@@ -196,22 +204,74 @@ export async function getDailySummaryAction(dateStr: string) {
     });
     const totalReplacements = replacements.reduce((sum, r) => sum + r.quantity, 0);
 
-    // Group items sold
-    const itemsSoldMap = new Map<string, { quantity: number; amount: number }>();
+    // Fetch ROJMEL for the day
+    let register = await prisma.cashRegister.findFirst({
+      where: {
+        openedAt: { gte: targetDate, lt: nextDay }
+      },
+      include: {
+        movements: true
+      }
+    });
+
+    // Fallback: If querying today's date and no register is found within boundaries, check for a currently active OPEN register
+    if (!register) {
+      const getLocalDateStr = (date: Date, offset: number) => {
+        const localTime = new Date(date.getTime() - offset * 60000);
+        return `${localTime.getUTCFullYear()}-${String(localTime.getUTCMonth() + 1).padStart(2, '0')}-${String(localTime.getUTCDate()).padStart(2, '0')}`;
+      };
+      const todayStr = getLocalDateStr(new Date(), offsetMinutes);
+      if (todayStr === dateStr) {
+        register = await prisma.cashRegister.findFirst({
+          where: { status: 'OPEN' },
+          include: {
+            movements: true
+          }
+        });
+      }
+    }
+
+    let expectedCash = 0;
+    if (register) {
+      const registerSales = await prisma.sale.aggregate({
+        where: {
+          paymentType: 'cash',
+          createdAt: { gte: register.openedAt }
+        },
+        _sum: { totalAmount: true }
+      });
+      
+      const registerExpenses = await prisma.expense.aggregate({
+        where: {
+          createdAt: { gte: register.openedAt }
+        },
+        _sum: { amount: true }
+      });
+
+      const cashSales = registerSales._sum.totalAmount || 0;
+      const cashExpenses = registerExpenses._sum.amount || 0;
+      
+      const additions = register.movements.filter(m => m.type === 'ADDITION').reduce((acc, m) => acc + m.amount, 0);
+      const removals = register.movements.filter(m => m.type === 'REMOVAL').reduce((acc, m) => acc + m.amount, 0);
+
+      expectedCash = register.openingBalance + cashSales + additions - cashExpenses - removals;
+    }
+
+    // Group items sold by item and payment type
+    const itemsSoldMap = new Map<string, { name: string; paymentType: string; quantity: number; amount: number }>();
     sales.forEach((s) => {
       if (s.paymentType === 'gift') return;
-      const current = itemsSoldMap.get(s.item.name) || { quantity: 0, amount: 0 };
-      itemsSoldMap.set(s.item.name, {
+      const key = `${s.item.name}-${s.paymentType}`;
+      const current = itemsSoldMap.get(key) || { name: s.item.name, paymentType: s.paymentType, quantity: 0, amount: 0 };
+      itemsSoldMap.set(key, {
+        name: s.item.name,
+        paymentType: s.paymentType,
         quantity: current.quantity + s.quantity,
         amount: current.amount + s.totalAmount,
       });
     });
 
-    const itemsSold = Array.from(itemsSoldMap.entries()).map(([name, data]) => ({
-      name,
-      quantity: data.quantity,
-      amount: data.amount,
-    }));
+    const itemsSold = Array.from(itemsSoldMap.values());
 
     return {
       success: true,
@@ -225,6 +285,8 @@ export async function getDailySummaryAction(dateStr: string) {
         salesCount: sales.filter(s => s.paymentType !== 'gift').length,
         expensesCount: expenses.length,
         closedBy: session.name,
+        register,
+        expectedCash,
         itemsSold,
         expenses: expenses.map(e => ({
           id: e.id,

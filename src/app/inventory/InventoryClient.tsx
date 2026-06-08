@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import CategoryCard from '@/components/CategoryCard';
+import CompanyCard from '@/components/CompanyCard';
 import Modal from '@/components/Modal';
 import { createCategory, deleteCategory, getStockReportData } from '@/app/actions/categories';
 import { useToast } from '@/components/Toast';
@@ -11,9 +12,10 @@ import BackButton from '@/components/BackButton';
 interface InventoryClientProps {
   categories: any[];
   isAdmin: boolean;
+  companyStock?: { brand: string; stock: number }[];
 }
 
-export default function InventoryClient({ categories, isAdmin }: InventoryClientProps) {
+export default function InventoryClient({ categories, isAdmin, companyStock }: InventoryClientProps) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [deletingCategory, setDeletingCategory] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -22,6 +24,10 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
   const [exportingExcel, setExportingExcel] = useState(false);
   const { showToast } = useToast();
   const router = useRouter();
+
+  const allItems = categories.flatMap((cat: any) => 
+    (cat.items || []).map((i: any) => ({ ...i, category: { name: cat.name } }))
+  );
 
   async function handleAddCategory(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -439,8 +445,8 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
       <div className="category-grid">
         {categories.map((cat: any) => {
           const items = cat.items || [];
-          const lowStock = items.filter((i: any) => i.stock > 0 && i.stock <= i.lowStockThreshold).length;
-          const outOfStock = items.filter((i: any) => i.stock <= 0).length;
+          const lowStock = items.filter((i: any) => !i.isAlertDismissed && i.stock > 0 && i.stock <= i.lowStockThreshold).length;
+          const outOfStock = items.filter((i: any) => !i.isAlertDismissed && i.stock <= 0).length;
           return (
             <CategoryCard
               key={cat.id}
@@ -451,6 +457,7 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
               itemCount={cat._count?.items || 0}
               lowStockCount={lowStock}
               outOfStockCount={outOfStock}
+              items={items}
               onDelete={isAdmin ? () => setDeletingCategory(cat) : undefined}
             />
           );
@@ -462,6 +469,26 @@ export default function InventoryClient({ categories, isAdmin }: InventoryClient
           <div className="empty-state-icon">📦</div>
           <h3 className="empty-state-title">No categories yet</h3>
           <p className="empty-state-text">Create your first category to start managing inventory</p>
+        </div>
+      )}
+
+      {companyStock && companyStock.length > 0 && (
+        <div style={{ marginTop: '3rem' }}>
+          <h2 className="section-title" style={{ marginBottom: '1rem' }}>🏢 Company-wise Stock</h2>
+          <div className="stats-grid">
+            {companyStock.map((company, idx) => {
+              const brandName = company.brand || 'Unbranded';
+              const companyItems = allItems.filter(i => (i.brand || 'Unbranded') === brandName);
+              return (
+                <CompanyCard 
+                  key={idx} 
+                  brand={brandName} 
+                  stock={company.stock} 
+                  items={companyItems} 
+                />
+              );
+            })}
+          </div>
         </div>
       )}
 

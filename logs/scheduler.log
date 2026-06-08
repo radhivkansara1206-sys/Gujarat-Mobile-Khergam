@@ -1,0 +1,125 @@
+================================================== 
+[START] 28-05-2026 12:02:19.24 
+Starting daily scan and cleanup... 
+--- STARTING HOURLY/DAILY AUTOMATED SCANNERS ---
+[2026-05-28T06:32:26.667Z] Starting optimization triggered via automatic...
+Running VACUUM ANALYZE on Notification table...
+--- CLEANUP AND OPTIMIZATION RESULTS ---
+{
+  "success": true,
+  "message": "Completed Successfully",
+  "readNotificationsRemoved": 0,
+  "oldNotificationsRemoved": 0,
+  "spaceRecovered": "0 KB",
+  "totalDbSize": "552 KB",
+  "salesTotal": 0,
+  "salesCount": 0,
+  "netRevenue": 0,
+  "lowStockCount": 0,
+  "whatsappStatus": "Not configured / Failed to send",
+  "reportText": "📱 *GUJARAT MOBILE KHERGAM*\n🧹 *Automated DB Cleanup & Optimization*\n📅 *Date:* 28 May 2026\n🔌 *Source:* AUTOMATIC\n\n━━━━━━━━━━━━━━━━━━━━\n🧹 *CLEANUP & OPTIMIZATION*\n• Read Notifications Removed: *0*\n• Old Notifications Removed: *0*\n• Space Recovered: *Optimized (0 dead tuples)*\n• Total DB Size: *552 KB*\n• Index & Schema Health: *Excellent*\n\n📈 *DAILY STORE REPORT*\n• Total Sales: *₹0* (0 bills)\n  - Cash Sales: *₹0*\n  - Online Sales: *₹0*\n• Total Expenses: *₹0* (0 records)\n• Gifts Given: *0* units\n• Defective Replacements: *0* units\n\n🔄 *STORE NET REVENUE*\n• Net Revenue: *₹0*\n• Expected Counter Cash: *₹0*\n\n⚠️ *LOW STOCK ALERTS*\n• *0* items are running low on stock!\n━━━━━━━━━━━━━━━━━━━━\n⚡ *Status:* All systems clean & fully optimized."
+}
+----------------------------------------
+[FINISHED] 28-05-2026 12:02:42.14 
+================================================== 
+================================================== 
+[START] 03-06-2026 23:30:02.19 
+Starting daily scan and cleanup... 
+Need to install the following packages:
+tsx@4.22.4
+Ok to proceed? (y) ================================================== 
+[START] 07-06-2026 12:03:01.84 
+Starting daily scan and cleanup... 
+--- STARTING HOURLY/DAILY AUTOMATED SCANNERS ---
+[2026-06-07T06:33:02.861Z] Starting optimization triggered via automatic...
+Running VACUUM ANALYZE on Notification table...
+--- CLEANUP AND OPTIMIZATION RESULTS ---
+{
+  "success": true,
+  "message": "Completed Successfully",
+  "readNotificationsRemoved": 1,
+  "oldNotificationsRemoved": 0,
+  "spaceRecovered": "24 KB",
+  "totalDbSize": "568 KB",
+  "salesTotal": 0,
+  "salesCount": 1,
+  "netRevenue": 0,
+  "lowStockCount": 0,
+  "whatsappStatus": "Not configured / Failed to send",
+  "reportText": "📱 *GUJARAT MOBILE KHERGAM*\n🧹 *Automated DB Cleanup & Optimization*\n📅 *Date:* 07 June 2026\n🔌 *Source:* AUTOMATIC\n\n━━━━━━━━━━━━━━━━━━━━\n🧹 *CLEANUP & OPTIMIZATION*\n• Read Notifications Removed: *1*\n• Old Notifications Removed: *0*\n• Space Recovered: *24 KB*\n• Total DB Size: *568 KB*\n• Index & Schema Health: *Excellent*\n\n📈 *DAILY STORE REPORT*\n• Total Sales: *₹0* (1 bills)\n  - Cash Sales: *₹0*\n  - Online Sales: *₹0*\n• Total Expenses: *₹0* (0 records)\n• Gifts Given: *0* units\n• Defective Replacements: *0* units\n\n🔄 *STORE NET REVENUE*\n• Net Revenue: *₹0*\n• Expected Counter Cash: *₹0*\n\n⚠️ *LOW STOCK ALERTS*\n• *0* items are running low on stock!\n━━━━━━━━━━━━━━━━━━━━\n⚡ *Status:* All systems clean & fully optimized."
+}
+----------------------------------------
+[FINISHED] 07-06-2026 12:03:10.17 
+================================================== 
+================================================== 
+[START] 07-06-2026 12:05:16.49 
+Starting daily scan and cleanup... 
+--- STARTING HOURLY/DAILY AUTOMATED SCANNERS ---
+[2026-06-07T06:35:17.519Z] Starting optimization triggered via automatic...
+Running VACUUM ANALYZE on Notification table...
+--- CLEANUP AND OPTIMIZATION RESULTS ---
+{
+  "success": true,
+  "message": "Completed Successfully",
+  "readNotificationsRemoved": 0,
+  "oldNotificationsRemoved": 0,
+  "spaceRecovered": "0 KB",
+  "totalDbSize": "568 KB",
+  "salesTotal": 0,
+  "salesCount": 1,
+  "netRevenue": 0,
+  "lowStockCount": 0,
+  "whatsappStatus": "Not configured / Failed to send",
+  "reportText": "📱 *GUJARAT MOBILE KHERGAM*\n🧹 *Automated DB Cleanup & Optimization*\n📅 *Date:* 07 June 2026\n🔌 *Source:* AUTOMATIC\n\n━━━━━━━━━━━━━━━━━━━━\n🧹 *CLEANUP & OPTIMIZATION*\n• Read Notifications Removed: *0*\n• Old Notifications Removed: *0*\n• Space Recovered: *Optimized (0 dead tuples)*\n• Total DB Size: *568 KB*\n• Index & Schema Health: *Excellent*\n\n📈 *DAILY STORE REPORT*\n• Total Sales: *₹0* (1 bills)\n  - Cash Sales: *₹0*\n  - Online Sales: *₹0*\n• Total Expenses: *₹0* (0 records)\n• Gifts Given: *0* units\n• Defective Replacements: *0* units\n\n🔄 *STORE NET REVENUE*\n• Net Revenue: *₹0*\n• Expected Counter Cash: *₹0*\n\n⚠️ *LOW STOCK ALERTS*\n• *0* items are running low on stock!\n━━━━━━━━━━━━━━━━━━━━\n⚡ *Status:* All systems clean & fully optimized."
+}
+----------------------------------------
+[FINISHED] 07-06-2026 12:05:21.97 
+================================================== 
+================================================== 
+[START] 07-06-2026 12:05:30.76 
+Starting daily scan and cleanup... 
+--- STARTING HOURLY/DAILY AUTOMATED SCANNERS ---
+[2026-06-07T06:35:31.792Z] Starting optimization triggered via automatic...
+Running VACUUM ANALYZE on Notification table...
+--- CLEANUP AND OPTIMIZATION RESULTS ---
+{
+  "success": true,
+  "message": "Completed Successfully",
+  "readNotificationsRemoved": 0,
+  "oldNotificationsRemoved": 0,
+  "spaceRecovered": "0 KB",
+  "totalDbSize": "568 KB",
+  "salesTotal": 0,
+  "salesCount": 1,
+  "netRevenue": 0,
+  "lowStockCount": 0,
+  "whatsappStatus": "Not configured / Failed to send",
+  "reportText": "📱 *GUJARAT MOBILE KHERGAM*\n🧹 *Automated DB Cleanup & Optimization*\n📅 *Date:* 07 June 2026\n🔌 *Source:* AUTOMATIC\n\n━━━━━━━━━━━━━━━━━━━━\n🧹 *CLEANUP & OPTIMIZATION*\n• Read Notifications Removed: *0*\n• Old Notifications Removed: *0*\n• Space Recovered: *Optimized (0 dead tuples)*\n• Total DB Size: *568 KB*\n• Index & Schema Health: *Excellent*\n\n📈 *DAILY STORE REPORT*\n• Total Sales: *₹0* (1 bills)\n  - Cash Sales: *₹0*\n  - Online Sales: *₹0*\n• Total Expenses: *₹0* (0 records)\n• Gifts Given: *0* units\n• Defective Replacements: *0* units\n\n🔄 *STORE NET REVENUE*\n• Net Revenue: *₹0*\n• Expected Counter Cash: *₹0*\n\n⚠️ *LOW STOCK ALERTS*\n• *0* items are running low on stock!\n━━━━━━━━━━━━━━━━━━━━\n⚡ *Status:* All systems clean & fully optimized."
+}
+----------------------------------------
+[FINISHED] 07-06-2026 12:05:36.60 
+================================================== 
+================================================== 
+[START] 08-06-2026 12:01:36.50 
+Starting daily scan and cleanup... 
+--- STARTING HOURLY/DAILY AUTOMATED SCANNERS ---
+[2026-06-08T06:31:37.333Z] Starting optimization triggered via automatic...
+Running VACUUM ANALYZE on Notification table...
+--- CLEANUP AND OPTIMIZATION RESULTS ---
+{
+  "success": true,
+  "message": "Completed Successfully",
+  "readNotificationsRemoved": 0,
+  "oldNotificationsRemoved": 0,
+  "spaceRecovered": "0 KB",
+  "totalDbSize": "568 KB",
+  "salesTotal": 0,
+  "salesCount": 0,
+  "netRevenue": 0,
+  "lowStockCount": 0,
+  "whatsappStatus": "Not configured / Failed to send",
+  "reportText": "📱 *GUJARAT MOBILE KHERGAM*\n🧹 *Automated DB Cleanup & Optimization*\n📅 *Date:* 08 June 2026\n🔌 *Source:* AUTOMATIC\n\n━━━━━━━━━━━━━━━━━━━━\n🧹 *CLEANUP & OPTIMIZATION*\n• Read Notifications Removed: *0*\n• Old Notifications Removed: *0*\n• Space Recovered: *Optimized (0 dead tuples)*\n• Total DB Size: *568 KB*\n• Index & Schema Health: *Excellent*\n\n📈 *DAILY STORE REPORT*\n• Total Sales: *₹0* (0 bills)\n  - Cash Sales: *₹0*\n  - Online Sales: *₹0*\n• Total Expenses: *₹0* (0 records)\n• Gifts Given: *0* units\n• Defective Replacements: *0* units\n\n🔄 *STORE NET REVENUE*\n• Net Revenue: *₹0*\n• Expected Counter Cash: *₹0*\n\n⚠️ *LOW STOCK ALERTS*\n• *0* items are running low on stock!\n━━━━━━━━━━━━━━━━━━━━\n⚡ *Status:* All systems clean & fully optimized."
+}
+----------------------------------------
+[FINISHED] 08-06-2026 12:01:44.11 
+================================================== 

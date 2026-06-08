@@ -1,6 +1,7 @@
 import { getCategories } from '@/app/actions/categories';
 import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
 import InventoryClient from './InventoryClient';
 
 export default async function InventoryPage() {
@@ -19,10 +20,29 @@ export default async function InventoryPage() {
     return (a.sortOrder || 0) - (b.sortOrder || 0);
   });
 
+  // Fetch company-wise total stock
+  const companyStockRaw = await prisma.item.groupBy({
+    by: ['brand'],
+    _sum: { stock: true },
+    where: {
+      isActive: true,
+      brand: { not: '' }
+    },
+    orderBy: {
+      _sum: { stock: 'desc' }
+    }
+  });
+
+  const companyStock = companyStockRaw.map(c => ({
+    brand: c.brand,
+    stock: c._sum.stock || 0
+  }));
+
   return (
     <InventoryClient
       categories={sortedCategories}
       isAdmin={session.role === 'admin'}
+      companyStock={companyStock}
     />
   );
 }

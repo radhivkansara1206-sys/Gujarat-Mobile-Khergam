@@ -14,17 +14,21 @@ export default function Error({
   }, [error]);
 
   return (
-    <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: '#fff', color: '#000', minHeight: '100vh' }}>
-      <h2 style={{ color: 'red' }}>Something went wrong!</h2>
-      <p style={{ margin: '1rem 0', fontFamily: 'monospace', backgroundColor: '#f5f5f5', padding: '1rem', borderRadius: '8px' }}>
-        {error.message || 'Unknown error'}
-      </p>
-      <button
-        onClick={() => reset()}
-        style={{ padding: '0.5rem 1rem', background: '#ff6600', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-      >
-        Try again
-      </button>
+    <div className="main-content flex-center" style={{ minHeight: '100vh', flexDirection: 'column' }}>
+      <div className="empty-state">
+        <div className="empty-state-icon" style={{ color: 'var(--danger)' }}>🚨</div>
+        <h2 className="empty-state-title" style={{ color: 'var(--danger)' }}>Something went wrong!</h2>
+        <p className="empty-state-text" style={{ fontFamily: 'monospace', background: 'var(--border-light)', padding: '1rem', borderRadius: '8px', maxWidth: '600px', margin: '1rem auto' }}>
+          {error.message || 'Unknown error'}
+        </p>
+        <button
+          className="btn btn-primary"
+          onClick={() => reset()}
+          style={{ marginTop: '1.5rem' }}
+        >
+          Try again
+        </button>
+      </div>
     </div>
   );
 }

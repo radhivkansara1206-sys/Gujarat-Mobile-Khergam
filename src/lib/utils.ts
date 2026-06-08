@@ -17,13 +17,18 @@ export function formatDate(date: Date | string): string {
 }
 
 export function formatDateTime(date: Date | string): string {
-  return new Intl.DateTimeFormat('en-IN', {
+  const formatted = new Intl.DateTimeFormat('en-IN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(date));
+  
+  if (typeof window !== 'undefined') {
+    console.log(`[Validation Log] UI displaying formatted timestamp: input="${date}", formatted="${formatted}"`);
+  }
+  return formatted;
 }
 
 export function formatRelativeTime(date: Date | string): string {
@@ -71,4 +76,32 @@ export function getEndOfDay(date: Date = new Date()): Date {
   const d = new Date(date);
   d.setHours(23, 59, 59, 999);
   return d;
+}
+
+export function getLocalDayBounds(dateStr: string, offsetMinutes: number): { start: Date; end: Date } {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const startLocalUtc = Date.UTC(year, month - 1, day, 0, 0, 0, 0);
+  const endLocalUtc = Date.UTC(year, month - 1, day, 23, 59, 59, 999);
+  
+  const startUtc = new Date(startLocalUtc + offsetMinutes * 60000);
+  const endUtc = new Date(endLocalUtc + offsetMinutes * 60000);
+  
+  return { start: startUtc, end: endUtc };
+}
+
+export function getTodayBounds(offsetMinutes: number): { start: Date; end: Date } {
+  const now = new Date();
+  const clientLocalTime = new Date(now.getTime() - offsetMinutes * 60000);
+  
+  const year = clientLocalTime.getUTCFullYear();
+  const month = clientLocalTime.getUTCMonth();
+  const day = clientLocalTime.getUTCDate();
+  
+  const startLocalUtc = Date.UTC(year, month, day, 0, 0, 0, 0);
+  const endLocalUtc = Date.UTC(year, month, day, 23, 59, 59, 999);
+  
+  const startUtc = new Date(startLocalUtc + offsetMinutes * 60000);
+  const endUtc = new Date(endLocalUtc + offsetMinutes * 60000);
+  
+  return { start: startUtc, end: endUtc };
 }

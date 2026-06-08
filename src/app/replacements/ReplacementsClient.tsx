@@ -28,6 +28,33 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
+  const [dismissedStaffAlerts, setDismissedStaffAlerts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const stored = localStorage.getItem('dismissedStaffAlerts');
+    if (stored) {
+      try {
+        setDismissedStaffAlerts(JSON.parse(stored));
+      } catch (e) {}
+    }
+  }, []);
+
+  const handleDismissStaffAlert = (e: React.MouseEvent, id: string, hours: number) => {
+    e.stopPropagation();
+    const expiry = hours === -1 ? -1 : Date.now() + hours * 3600 * 1000;
+    const newDismissed = { ...dismissedStaffAlerts, [id]: expiry };
+    setDismissedStaffAlerts(newDismissed);
+    localStorage.setItem('dismissedStaffAlerts', JSON.stringify(newDismissed));
+  };
+
+  const activeNotifications = notifications.filter((n: any) => {
+    const expiry = dismissedStaffAlerts[n.id];
+    if (expiry === -1) return false;
+    if (expiry && expiry > Date.now()) return false;
+    return true;
+  });
+
+  const activeUnreadCount = activeNotifications.filter((n: any) => !n.isRead).length;
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -104,28 +131,15 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
         </div>
         {isAdmin && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {unreadCount > 0 && (
-              <button 
-                onClick={async () => {
-                  setUnreadCount(0);
-                  await markNotificationsRead();
-                  showToast('Alerts dismissed');
-                }}
-                className="btn btn-secondary btn-sm"
-                style={{ padding: '0.4rem 0.6rem', fontSize: '0.75rem', color: '#64748b' }}
-              >
-                Dismiss
-              </button>
-            )}
             <button className="btn btn-primary" onClick={handleViewNotifications} style={{ position: 'relative' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
               </svg>
               Staff Alerts
-              {unreadCount > 0 && (
+              {activeUnreadCount > 0 && (
                 <span className="notification-badge" style={{ position: 'absolute', top: '-8px', right: '-8px', animation: 'pulse 1.5s infinite', border: '2px solid white' }}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                  {activeUnreadCount > 99 ? '99+' : activeUnreadCount}
                 </span>
               )}
             </button>
@@ -134,14 +148,14 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
       </div>
 
       {/* Stock to Return to Dealer */}
-      <div style={{ background: 'linear-gradient(135deg, #ff6600, #e05500)', borderRadius: '12px', padding: '1.25rem 1.5rem', marginBottom: '1.5rem', color: 'white' }}>
+      <div style={{ background: 'linear-gradient(135deg, #ff6600, #e05500)', borderRadius: '12px', padding: 'clamp(1rem, 3vw, 1.5rem)', marginBottom: '1.5rem', color: 'white' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
-            <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9 }}>📦 Total Defective Stock to Return to Dealer</p>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '2.25rem', fontWeight: 800 }}>{data.totalQuantity} units</p>
+            <p style={{ margin: 0, fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', opacity: 0.9 }}>📦 Total Defective Stock to Return to Dealer</p>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', fontWeight: 800 }}>{data.totalQuantity} units</p>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9 }}>From {data.totalCount} replacements</p>
+          <div style={{ textAlign: 'right', alignSelf: 'flex-end' }}>
+            <p style={{ margin: 0, fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', opacity: 0.9 }}>From {data.totalCount} replacements</p>
           </div>
         </div>
       </div>
@@ -260,7 +274,7 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
                         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                           <button
                             className="btn btn-sm"
-                            style={{ background: '#d1fae5', color: '#059669', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                            style={{ background: '#d1fae5', color: '#059669', border: 'none', padding: '0.4rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
                             onClick={() => handleRestore(r.id)}
                             disabled={actionLoading === r.id}
                           >
@@ -268,7 +282,7 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
                           </button>
                           <button
                             className="btn btn-sm"
-                            style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                            style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '0.4rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
                             onClick={() => handleDelete(r.id)}
                             disabled={actionLoading === r.id}
                           >
@@ -290,19 +304,37 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.7)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}
           onClick={() => setShowNotifications(false)}
         >
-          <div style={{ background: '#ffffff', borderRadius: '16px', width: '100%', maxWidth: '500px', maxHeight: '80vh', overflow: 'auto', padding: '1.5rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}
+          <div style={{ background: '#ffffff', borderRadius: '16px', width: '100%', maxWidth: '500px', maxHeight: '80vh', overflow: 'auto', padding: 'clamp(1rem, 3vw, 1.5rem)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ background: '#fef3c7', color: '#f59e0b', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+                <div style={{ background: '#fef3c7', color: '#f59e0b', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
                   🔔
                 </div>
                 <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>Staff Alerts</h2>
               </div>
-              <button onClick={() => setShowNotifications(false)} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s' }}>×</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {activeNotifications.length > 0 && (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newDismissed = { ...dismissedStaffAlerts };
+                      activeNotifications.forEach((n: any) => newDismissed[n.id] = -1);
+                      setDismissedStaffAlerts(newDismissed);
+                      localStorage.setItem('dismissedStaffAlerts', JSON.stringify(newDismissed));
+                      markNotificationsRead();
+                    }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '0.5rem 0.85rem', fontSize: '0.8rem', color: '#64748b' }}
+                  >
+                    Dismiss All
+                  </button>
+                )}
+                <button onClick={() => setShowNotifications(false)} style={{ background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b', transition: 'all 0.2s' }}>×</button>
+              </div>
             </div>
-            {notifications.length === 0 ? (
+            {activeNotifications.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '3rem 0' }}>
                 <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>✅</div>
                 <p style={{ color: '#64748b', margin: 0, fontWeight: 500 }}>You're all caught up!</p>
@@ -310,7 +342,7 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {notifications.map((n: any) => (
+                {activeNotifications.map((n: any) => (
                   <div key={n.id} style={{
                     padding: '1rem',
                     borderRadius: '12px',
@@ -319,10 +351,14 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
                     transition: 'transform 0.2s',
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
-                      <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.5, color: '#334155' }}>
+                      <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.5, color: '#334155', flex: 1 }}>
                         {!n.isRead && <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', marginRight: '0.5rem', boxShadow: '0 0 0 4px #fee2e2' }}></span>}
                         {n.message}
                       </p>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                        <button onClick={(e) => handleDismissStaffAlert(e, n.id, 24)} className="btn btn-ghost btn-sm" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', background: '#f1f5f9', color: '#64748b' }}>Remind Later</button>
+                        <button onClick={(e) => handleDismissStaffAlert(e, n.id, -1)} className="btn btn-ghost btn-icon btn-sm" style={{ padding: '0.3rem', width: '36px', height: '36px', background: '#f1f5f9', color: '#64748b' }} title="Dismiss">✕</button>
+                      </div>
                     </div>
                     <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>
                       {formatDateTime(n.createdAt)}

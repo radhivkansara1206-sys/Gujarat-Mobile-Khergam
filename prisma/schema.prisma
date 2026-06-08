@@ -18,7 +18,10 @@ model User {
   sales     Sale[]
   gifts     Gift[]
   expenses  Expense[]
-  replacements Replacement[]
+  replacements    Replacement[]
+  openedRegisters CashRegister[] @relation("OpenedBy")
+  closedRegisters CashRegister[] @relation("ClosedBy")
+  cashMovements   CashMovement[]
 }
 
 model Category {
@@ -38,10 +41,12 @@ model Item {
   name              String
   brand             String   @default("")
   model             String   @default("")
+  subCategory       String   @default("")
   purchasePrice     Float    @default(0)
   sellingPrice      Float    @default(0)
   stock             Int      @default(0)
   lowStockThreshold Int      @default(5)
+  isAlertDismissed  Boolean  @default(false)
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -128,5 +133,46 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([isRead])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model CashRegister {
+  id                     String         @id @default(uuid())
+  openingBalance         Float
+  closingBalance         Float?
+  expectedClosingBalance Float?
+  openingNotes           String?        @default("") // JSON string of notes count
+  closingNotes           String?        @default("") // JSON string of notes count
+  openedAt               DateTime       @default(now())
+  closedAt               DateTime?
+  openedById             String
+  closedById             String?
+  status                 String         @default("OPEN") // OPEN, CLOSED
+  discrepancyAmount      Float          @default(0)
+  discrepancyReason      String?        @default("")
+  notes                  String?        @default("")
+  movements              CashMovement[]
+  openedBy               User           @relation("OpenedBy", fields: [openedById], references: [id])
+  closedBy               User?          @relation("ClosedBy", fields: [closedById], references: [id])
+
+  @@index([status])
+  @@index([openedAt])
+  @@index([closedAt])
+}
+
+model CashMovement {
+  id          String       @id @default(uuid())
+  registerId  String
+  userId      String
+  type        String       // ADDITION, REMOVAL
+  amount      Float
+  reason      String       // Bank Deposit, Owner Withdrawal, Change Float Adjustment, etc.
+  notes       String?      @default("")
+  createdAt   DateTime     @default(now())
+  register    CashRegister @relation(fields: [registerId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+
+  @@index([registerId])
   @@index([createdAt])
 }

@@ -8,7 +8,6 @@ import { formatDate } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
-import { runManualOptimizationAction } from '@/app/actions/optimize';
 
 interface SettingsClientProps {
   users: any[];
@@ -22,22 +21,8 @@ export default function SettingsClient({ users, currentUserId }: SettingsClientP
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
   const router = useRouter();
-
-  const [optimizing, setOptimizing] = useState(false);
-  const [optimizationResult, setOptimizationResult] = useState<any>(null);
-
-  async function handleRunOptimization() {
-    setOptimizing(true);
-    showToast('Initializing system-wide scan and database vacuum...', 'info');
-    const result = await runManualOptimizationAction();
-    if (result.success) {
-      setOptimizationResult(result.data);
-      showToast('Cleanup and database optimizations completed successfully!');
-    } else {
-      showToast(result.error || 'Failed to complete optimization', 'error');
-    }
-    setOptimizing(false);
-  }
+  const [showPasswordAdd, setShowPasswordAdd] = useState(false);
+  const [showPasswordEdit, setShowPasswordEdit] = useState(false);
 
   async function handleAddUser(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -186,96 +171,12 @@ export default function SettingsClient({ users, currentUserId }: SettingsClientP
         </div>
       </div>
 
-      {/* Database & Webapp Optimization Section */}
-      <div className="table-container" style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
-              🧹 System Scans & Database Optimization
-            </h3>
-            <p className="text-secondary" style={{ marginTop: '0.4rem', fontSize: '0.85rem', maxWidth: '600px', margin: 0 }}>
-              Keeps your mobile shop webapp running at maximum speed. Cleans up read and expired notifications, optimizes PostgreSQL indexes, vacuums dead tuples, and compiles daily reports sent automatically to WhatsApp.
-            </p>
-          </div>
-          <button 
-            className="btn btn-secondary" 
-            onClick={handleRunOptimization} 
-            disabled={optimizing}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.65rem 1.15rem' }}
-          >
-            {optimizing ? (
-              <>
-                <span className="spinner spinner-sm"></span> Optimizing...
-              </>
-            ) : (
-              <>
-                ⚡ Clean & Optimize Webapp
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
       {/* App Info */}
       <div className="settings-info" style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)' }}>
         <h3>About</h3>
         <p>Gujarat Mobile Khergam — Stock Management System</p>
         <p className="text-secondary">Version 1.0.0</p>
       </div>
-
-      {/* Optimization Results Modal */}
-      <Modal isOpen={!!optimizationResult} onClose={() => setOptimizationResult(null)} title="🧹 Optimization Report" size="md">
-        {optimizationResult && (
-          <div>
-            <div style={{ backgroundColor: 'var(--success-light)', color: 'var(--success-dark)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <span style={{ fontSize: '1.25rem' }}>✅</span>
-              <strong>System successfully scanned and fully optimized!</strong>
-            </div>
-
-            <table className="data-table" style={{ fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-              <tbody>
-                <tr>
-                  <td className="font-semibold">Read Notifications Cleaned</td>
-                  <td className="text-secondary" style={{ textAlign: 'right' }}>{optimizationResult.readNotificationsRemoved}</td>
-                </tr>
-                <tr>
-                  <td className="font-semibold">Expired Notifications Cleaned</td>
-                  <td className="text-secondary" style={{ textAlign: 'right' }}>{optimizationResult.oldNotificationsRemoved}</td>
-                </tr>
-                <tr>
-                  <td className="font-semibold">Database Space Recovered</td>
-                  <td style={{ color: 'var(--success-dark)', fontWeight: 'bold', textAlign: 'right' }}>{optimizationResult.spaceRecovered}</td>
-                </tr>
-                <tr>
-                  <td className="font-semibold">Active Database Table Size</td>
-                  <td className="text-secondary" style={{ textAlign: 'right' }}>{optimizationResult.totalDbSize}</td>
-                </tr>
-                <tr>
-                  <td className="font-semibold">WhatsApp Daily Report Status</td>
-                  <td style={{ color: optimizationResult.whatsappStatus.includes('successfully') ? 'var(--success-dark)' : 'var(--danger-dark)', fontWeight: 'bold', textAlign: 'right' }}>
-                    {optimizationResult.whatsappStatus}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div style={{ background: '#f8fafc', border: '1px solid var(--border)', padding: '1rem', borderRadius: '12px', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-              <p style={{ margin: 0, fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <span>📋</span> Generated Report Preview:
-              </p>
-              <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'monospace', color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: '1.4' }}>
-                {optimizationResult.reportText}
-              </pre>
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" className="btn btn-primary" onClick={() => setOptimizationResult(null)}>
-                Done
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {/* Add User Modal */}
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New User">
@@ -290,7 +191,32 @@ export default function SettingsClient({ users, currentUserId }: SettingsClientP
           </div>
           <div className="form-group">
             <label className="form-label">Password *</label>
-            <input name="password" type="password" className="form-input" placeholder="Minimum 6 characters" minLength={6} required />
+            <div style={{ position: 'relative' }}>
+              <input 
+                name="password" 
+                type={showPasswordAdd ? 'text' : 'password'} 
+                className="form-input" 
+                placeholder="Minimum 6 characters" 
+                minLength={6} 
+                required 
+                style={{ paddingRight: '3rem' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPasswordAdd(!showPasswordAdd)}
+                style={{
+                  position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem',
+                  color: '#64748b', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {showPasswordAdd ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                )}
+              </button>
+            </div>
           </div>
           <div className="form-group">
             <label className="form-label">Role</label>
@@ -323,7 +249,31 @@ export default function SettingsClient({ users, currentUserId }: SettingsClientP
             </div>
             <div className="form-group">
               <label className="form-label">New Password</label>
-              <input name="password" type="password" className="form-input" placeholder="Leave blank to keep current password" minLength={6} />
+              <div style={{ position: 'relative' }}>
+                <input 
+                  name="password" 
+                  type={showPasswordEdit ? 'text' : 'password'} 
+                  className="form-input" 
+                  placeholder="Leave blank to keep current password" 
+                  minLength={6} 
+                  style={{ paddingRight: '3rem' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordEdit(!showPasswordEdit)}
+                  style={{
+                    position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem',
+                    color: '#64748b', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  {showPasswordEdit ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+              </div>
             </div>
             <div className="form-group">
               <label className="form-label">Role</label>

@@ -53,6 +53,13 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: '/register',
+    label: 'ROJMEL',
+    icon: (
+      <span style={{ fontSize: '1.25rem' }}>💵</span>
+    ),
+  },
+  {
     href: '/replacements',
     label: 'Replacements',
     icon: (
@@ -93,8 +100,31 @@ export default function Sidebar({ user, alertsCount }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [clientAlertsCount, setClientAlertsCount] = useState(alertsCount || 0);
 
   useEffect(() => {
+    const updateAlertsCount = () => {
+      const stored = localStorage.getItem('dismissedAlertItems');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          const now = Date.now();
+          let dismissedCount = 0;
+          for (const key in parsed) {
+            if (parsed[key] === -1 || parsed[key] > now) {
+              dismissedCount++;
+            }
+          }
+          setClientAlertsCount(Math.max(0, (alertsCount || 0) - dismissedCount));
+        } catch (e) {}
+      } else {
+        setClientAlertsCount(alertsCount || 0);
+      }
+    };
+
+    updateAlertsCount();
+    window.addEventListener('alerts-dismissed', updateAlertsCount);
+
     if ((window as any).deferredPrompt) {
       setDeferredPrompt((window as any).deferredPrompt);
     }
@@ -113,10 +143,11 @@ export default function Sidebar({ user, alertsCount }: SidebarProps) {
     window.addEventListener('pwa-prompt-ready', handlePromptReady);
 
     return () => {
+      window.removeEventListener('alerts-dismissed', updateAlertsCount);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('pwa-prompt-ready', handlePromptReady);
     };
-  }, []);
+  }, [alertsCount]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -176,9 +207,9 @@ export default function Sidebar({ user, alertsCount }: SidebarProps) {
               >
                 <span className="sidebar-link-icon" style={{ position: 'relative' }}>
                   {item.icon}
-                  {item.href === '/alerts' && alertsCount && alertsCount > 0 ? (
-                    <span style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', color: 'white', fontSize: '0.65rem', fontWeight: 'bold', minWidth: '16px', height: '16px', padding: '0 4px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--sidebar-bg)' }}>
-                      {alertsCount > 99 ? '99+' : alertsCount}
+                  {item.href === '/alerts' && clientAlertsCount && clientAlertsCount > 0 ? (
+                    <span style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', color: 'white', fontSize: '0.7rem', fontWeight: 'bold', minWidth: '18px', height: '18px', padding: '0 5px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--sidebar-bg)' }}>
+                      {clientAlertsCount > 99 ? '99+' : clientAlertsCount}
                     </span>
                   ) : null}
                 </span>
@@ -196,7 +227,7 @@ export default function Sidebar({ user, alertsCount }: SidebarProps) {
               <span className="sidebar-user-name">{user.name}</span>
               <span className="sidebar-user-role">{user.role}</span>
               <form action={logoutAction} style={{ marginTop: '0.25rem' }}>
-                <button type="submit" style={{ background: 'transparent', border: 'none', color: '#ff4444', fontSize: '0.75rem', cursor: 'pointer', padding: 0, fontWeight: 500 }}>
+                <button type="submit" style={{ background: 'transparent', border: 'none', color: '#ff4444', fontSize: '0.8rem', cursor: 'pointer', padding: '0.5rem 0', fontWeight: 500 }}>
                   Logout
                 </button>
               </form>

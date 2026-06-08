@@ -12,7 +12,7 @@ export async function getCategories() {
         _count: { select: { items: { where: { isActive: true } } } },
         items: {
           where: { isActive: true },
-          select: { stock: true, lowStockThreshold: true },
+          select: { id: true, name: true, brand: true, stock: true, lowStockThreshold: true, isAlertDismissed: true },
         },
       },
       orderBy: { sortOrder: 'asc' },
@@ -51,8 +51,7 @@ export async function createCategory(formData: FormData) {
       },
     });
 
-    revalidatePath('/inventory');
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return { success: true, data: category };
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
@@ -83,8 +82,7 @@ export async function updateCategory(id: string, formData: FormData) {
       },
     });
 
-    revalidatePath('/inventory');
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return { success: true, data: category };
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
@@ -111,8 +109,7 @@ export async function deleteCategory(id: string) {
       data: { isActive: false },
     });
 
-    revalidatePath('/inventory');
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {

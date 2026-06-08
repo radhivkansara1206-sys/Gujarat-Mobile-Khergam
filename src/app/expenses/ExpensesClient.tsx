@@ -44,6 +44,22 @@ export default function ExpensesClient({ initialData, defaultStartDate }: Expens
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+    
+    // Timezone-aware date resolution
+    const dateInput = formData.get('date') as string;
+    let finalDate = new Date();
+    if (dateInput) {
+      const [year, month, day] = dateInput.split('-').map(Number);
+      const now = new Date();
+      if (year === now.getFullYear() && month - 1 === now.getMonth() && day === now.getDate()) {
+        finalDate = now;
+      } else {
+        // Construct the backdated expense at local Noon (12:00:00)
+        finalDate = new Date(year, month - 1, day, 12, 0, 0);
+      }
+    }
+    formData.set('date', finalDate.toISOString());
+
     const result = await recordExpense(formData);
     
     if (result.success) {
@@ -187,7 +203,7 @@ export default function ExpensesClient({ initialData, defaultStartDate }: Expens
                       <td>
                         <div className="table-actions">
                           <button className="btn btn-ghost btn-sm text-danger" onClick={() => setDeletingExpense(expense)} title="Delete Expense">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <polyline points="3 6 5 6 21 6"/>
                               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                             </svg>
@@ -222,7 +238,15 @@ export default function ExpensesClient({ initialData, defaultStartDate }: Expens
           
           <div className="form-group">
             <label className="form-label">Date (Optional)</label>
-            <input name="date" type="date" className="form-input" defaultValue={new Date().toISOString().split('T')[0]} />
+            <input 
+              name="date" 
+              type="date" 
+              className="form-input" 
+              defaultValue={(() => {
+                const d = new Date();
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              })()} 
+            />
             <p className="form-hint">Leave as today to record right now, or select a past date.</p>
           </div>
 
