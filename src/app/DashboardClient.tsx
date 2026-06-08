@@ -164,10 +164,12 @@ export default function DashboardClient({
     }
 
     let itemsSoldText = '';
-    if (summaryData.itemsSold && summaryData.itemsSold.length > 0) {
-      itemsSoldText = `\n📦 *ITEMS SOLD TODAY*\n` + 
-        summaryData.itemsSold.map((item: any) => `• ${item.name} × ${item.quantity} (${formatCurrency(item.amount)}) [${item.paymentType === 'cash' ? 'Cash' : 'Online'}]`).join('\n') + 
-        `\n`;
+    const nonGiftItems = summaryData.itemsSold?.filter((item: any) => item.paymentType !== 'gift') || [];
+    const giftItems = summaryData.itemsSold?.filter((item: any) => item.paymentType === 'gift') || [];
+    if (nonGiftItems.length > 0 || giftItems.length > 0) {
+      const nonGiftLines = nonGiftItems.map((item: any) => `• ${item.name} × ${item.quantity} (${formatCurrency(item.amount)}) [${item.paymentType === 'cash' ? 'Cash' : 'Online'}]`);
+      const giftLines = giftItems.map((item: any) => `• 🎁 ${item.name} × ${item.quantity} (Gift${item.amount > 0 ? ` • ${formatCurrency(item.amount)}` : ''})`);
+      itemsSoldText = `\n📦 *ITEMS SOLD TODAY*\n` + [...nonGiftLines, ...giftLines].join('\n') + `\n`;
     } else {
       itemsSoldText = `\n📦 *ITEMS SOLD TODAY*\n• No items sold today.\n`;
     }
@@ -564,19 +566,21 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
                     {summaryData.itemsSold.map((item: any, idx: number) => (
                       <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                         <span style={{ fontWeight: 500, color: 'var(--text-primary)', paddingRight: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span>{item.name} <span style={{ color: 'var(--text-muted)' }}>× {item.quantity}</span></span>
+                          <span>{item.paymentType === 'gift' ? '🎁 ' : ''}{item.name} <span style={{ color: 'var(--text-muted)' }}>× {item.quantity}</span></span>
                           <span style={{ 
                             fontSize: '0.65rem', 
                             padding: '0.1rem 0.4rem', 
                             borderRadius: '4px',
-                            background: item.paymentType === 'cash' ? 'var(--success-light)' : 'var(--info-light)',
-                            color: item.paymentType === 'cash' ? 'var(--success-dark)' : 'var(--info-dark)',
+                            background: item.paymentType === 'cash' ? 'var(--success-light)' : item.paymentType === 'gift' ? '#fdf2f8' : 'var(--info-light)',
+                            color: item.paymentType === 'cash' ? 'var(--success-dark)' : item.paymentType === 'gift' ? '#9d174d' : 'var(--info-dark)',
                             fontWeight: 600
                           }}>
-                            {item.paymentType === 'cash' ? 'Cash' : 'Online'}
+                            {item.paymentType === 'cash' ? 'Cash' : item.paymentType === 'gift' ? 'Gift' : 'Online'}
                           </span>
                         </span>
-                        <span style={{ whiteSpace: 'nowrap' }}>{formatCurrency(item.amount)}</span>
+                        <span style={{ whiteSpace: 'nowrap' }}>
+                          {item.paymentType === 'gift' ? <span style={{ color: '#9d174d' }}>🎁 Free</span> : formatCurrency(item.amount)}
+                        </span>
                       </div>
                     ))}
                   </div>

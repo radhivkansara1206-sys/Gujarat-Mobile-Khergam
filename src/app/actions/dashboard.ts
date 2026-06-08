@@ -186,8 +186,19 @@ export async function getDailySummaryAction(dateStr: string) {
     });
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-    // Gifts for target date
-    const gifts = await prisma.gift.findMany({
+    // Gifts for target date - gifts are recorded as Sales with paymentType='gift'
+    // The separate Gift table is legacy; all new gifts go through the Sale table
+    const giftSales = sales.filter(s => s.paymentType === 'gift');
+    const giftsFromSales = giftSales.map(s => ({
+      id: s.id,
+      itemName: s.item.name,
+      quantity: s.quantity,
+      recipientName: '',
+      reason: s.notes || '',
+    }));
+
+    // Also check the legacy Gift table for older records
+    const legacyGifts = await prisma.gift.findMany({
       where: {
         createdAt: { gte: targetDate, lt: nextDay },
       },
@@ -195,6 +206,16 @@ export async function getDailySummaryAction(dateStr: string) {
         item: { select: { name: true } }
       }
     });
+    const legacyGiftsMapped = legacyGifts.map(g => ({
+      id: g.id,
+      itemName: g.item.name,
+      quantity: g.quantity,
+      recipientName: g.recipientName || '',
+      reason: g.reason || '',
+    }));
+
+    // Merge both sources
+    const allGifts = [...giftsFromSales, ...legacyGiftsMapped];
 
     // Replacements for target date
     const replacements = await prisma.replacement.findMany({
@@ -257,10 +278,9 @@ export async function getDailySummaryAction(dateStr: string) {
       expectedCash = register.openingBalance + cashSales + additions - cashExpenses - removals;
     }
 
-    // Group items sold by item and payment type
+    // Group items sold by item and payment type (include gifts)
     const itemsSoldMap = new Map<string, { name: string; paymentType: string; quantity: number; amount: number }>();
     sales.forEach((s) => {
-      if (s.paymentType === 'gift') return;
       const key = `${s.item.name}-${s.paymentType}`;
       const current = itemsSoldMap.get(key) || { name: s.item.name, paymentType: s.paymentType, quantity: 0, amount: 0 };
       itemsSoldMap.set(key, {
@@ -294,13 +314,7 @@ export async function getDailySummaryAction(dateStr: string) {
           description: e.description || '',
           amount: e.amount
         })),
-        gifts: gifts.map(g => ({
-          id: g.id,
-          itemName: g.item.name,
-          quantity: g.quantity,
-          recipientName: g.recipientName || '',
-          reason: g.reason || ''
-        }))
+        gifts: allGifts,
       },
     };
   } catch (error: any) {
