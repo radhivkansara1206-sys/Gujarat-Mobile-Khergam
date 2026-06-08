@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Modal from '@/components/Modal';
 import { useToast } from '@/components/Toast';
 import { getDailySummaryAction } from '@/app/actions/dashboard';
+import * as htmlToImage from 'html-to-image';
 
 interface DashboardClientProps {
   stats: any;
@@ -49,6 +50,7 @@ export default function DashboardClient({
   };
 
   const [showClosingModal, setShowClosingModal] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
   const [closingDate, setClosingDate] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -263,6 +265,55 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
     }
     
     setShowClosingModal(false);
+  };
+
+  const handleShareImage = async () => {
+    const node = document.getElementById('summary-content');
+    if (!node) return;
+
+    setGeneratingImage(true);
+    try {
+      const dataUrl = await htmlToImage.toPng(node, {
+        backgroundColor: '#ffffff',
+        pixelRatio: 2, // High quality
+        style: {
+          padding: '16px',
+          borderRadius: '0px',
+        }
+      });
+
+      // Try native share API for mobile
+      if (navigator.share) {
+        try {
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          const file = new File([blob], `summary-${closingDate}.png`, { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'Daily Business Summary',
+            });
+            showToast('Image shared successfully!');
+            setGeneratingImage(false);
+            return;
+          }
+        } catch (shareErr) {
+          console.error('Native share failed, falling back to download:', shareErr);
+        }
+      }
+
+      // Fallback: download the image
+      const link = document.createElement('a');
+      link.download = `summary-${closingDate}.png`;
+      link.href = dataUrl;
+      link.click();
+      showToast('Image downloaded successfully!');
+      
+    } catch (err) {
+      console.error('Error generating image:', err);
+      showToast('Failed to generate image', 'error');
+    }
+    setGeneratingImage(false);
   };
 
   return (
@@ -506,7 +557,7 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
               <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading summary metrics...</p>
             </div>
           ) : summaryData ? (
-            <div>
+            <div id="summary-content" style={{ padding: '0.5rem', background: '#fff' }}>
               {/* ROJMEL Summary */}
               <div style={{ marginBottom: '1.25rem', padding: '1rem', background: 'var(--primary-light)', border: '1px solid var(--primary)', borderRadius: '12px' }}>
                 <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: '#d97706', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -692,6 +743,22 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
               <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowClosingModal(false)}>
                   Cancel
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  onClick={handleShareImage}
+                  disabled={generatingImage}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#3b82f6', borderColor: '#3b82f6', color: '#fff' }}
+                >
+                  {generatingImage ? <span className="spinner"></span> : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  )}
+                  {generatingImage ? 'Generating...' : 'Share as Image'}
                 </button>
                 <button 
                   type="button" 
