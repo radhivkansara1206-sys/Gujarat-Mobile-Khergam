@@ -300,14 +300,16 @@ export default function ReplacementsClient({ initialData, categories, isAdmin, i
                     {isAdmin && (
                       <td>
                         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                          <button
-                            className="btn btn-sm"
-                            style={{ background: '#d1fae5', color: '#059669', border: 'none', padding: '0.4rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
-                            onClick={() => handleRestore(r.id)}
-                            disabled={actionLoading === r.id}
-                          >
-                            {actionLoading === r.id ? '...' : '↩ Restore'}
-                          </button>
+                          {!r.reason?.startsWith('RESTOCK:') && (
+                            <button
+                              className="btn btn-sm"
+                              style={{ background: '#d1fae5', color: '#059669', border: 'none', padding: '0.4rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+                              onClick={() => handleRestore(r.id)}
+                              disabled={actionLoading === r.id}
+                            >
+                              {actionLoading === r.id ? '...' : '↩ Restore'}
+                            </button>
+                          )}
                           <button
                             className="btn btn-sm"
                             style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '0.4rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
