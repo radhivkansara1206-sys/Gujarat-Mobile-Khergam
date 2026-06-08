@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
 import { recordSale, getSales, deleteSale } from '@/app/actions/sales';
 import { recordReplacement } from '@/app/actions/replacements';
@@ -77,6 +77,13 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const selectedItemData = items.find(i => i.id === selectedItem);
   const exchangeItemData = items.find(i => i.id === exchangeItemId);
   const total = selectedItemData ? selectedItemData.sellingPrice * quantity : 0;
+
+  useEffect(() => {
+    if (isExchange && selectedItemData && exchangeItemData) {
+      const diff = (exchangeItemData.sellingPrice * quantity) - (selectedItemData.sellingPrice * quantity);
+      setCashCollected(diff);
+    }
+  }, [isExchange, selectedItem, exchangeItemId, quantity]);
 
   async function handleRecordSale(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -551,9 +558,12 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                   value={cashCollected}
                   onChange={(e) => setCashCollected(e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder="0"
-                  min="0"
                 />
-                <span className="form-hint" style={{ color: '#1e40af', display: 'block', marginTop: '0.25rem' }}>This amount will be directly added to your Cash Drawer.</span>
+                <span className="form-hint" style={{ color: '#1e40af', display: 'block', marginTop: '0.25rem' }}>
+                  {typeof cashCollected === 'number' && cashCollected < 0 
+                    ? `Negative means you owe the customer ₹${Math.abs(cashCollected)}`
+                    : 'This amount will be directly added to your Cash Drawer.'}
+                </span>
               </div>
             </div>
           )}

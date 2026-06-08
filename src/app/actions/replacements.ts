@@ -72,7 +72,7 @@ export async function recordReplacement(data: {
       });
 
       // Handle Cash Difference if any
-      if (data.cashCollected && data.cashCollected > 0) {
+      if (data.cashCollected && data.cashCollected !== 0) {
         const activeRegister = await tx.cashRegister.findFirst({
           where: { status: 'OPEN' },
           orderBy: { openedAt: 'desc' }
@@ -82,8 +82,8 @@ export async function recordReplacement(data: {
             data: {
               registerId: activeRegister.id,
               userId: session.id,
-              type: 'ADDITION',
-              amount: data.cashCollected,
+              type: data.cashCollected > 0 ? 'ADDITION' : 'REMOVAL',
+              amount: Math.abs(data.cashCollected),
               reason: 'Exchange Price Difference',
               notes: `Exchanged ${item.name} for ${exchangeItemName || 'another item'}`,
             }
