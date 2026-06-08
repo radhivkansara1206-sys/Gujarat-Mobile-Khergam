@@ -149,6 +149,13 @@ export default function DashboardClient({
       const cashAmount = reg.status === 'CLOSED' ? (reg.closingBalance || 0) : reg.openingBalance;
       const notesJson = reg.status === 'CLOSED' ? reg.closingNotes : reg.openingNotes;
       
+      registerText = `\n━━━━━━━━━━━━━━━━━━━━\n💵 *ROJMEL REGISTER DETAILS*\n` +
+        `• Opening Cash: ${formatCurrency(reg.openingBalance)}\n`;
+        
+      if (reg.status === 'CLOSED') {
+        registerText += `• Closing Cash: ${formatCurrency(reg.closingBalance || 0)}\n`;
+      }
+      
       let denoms: Record<string, number> | null = null;
       if (notesJson) {
         try { denoms = JSON.parse(notesJson); } catch {}
@@ -163,7 +170,7 @@ export default function DashboardClient({
           .filter(([_, val]) => Number(val) > 0)
           .map(([k, v]) => `• ${k === 'coins' ? 'Coins' : '\u20b9' + k} × ${v}`);
         
-        registerText = `\n━━━━━━━━━━━━━━━━━━━━\n💵 *TODAY'S CASH DENOMINATIONS*\n` +
+        registerText += `\n📋 *TODAY'S CASH DENOMINATIONS*\n` +
           `${parts.join('\n')}\n`;
       }
       
