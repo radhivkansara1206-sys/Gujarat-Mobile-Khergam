@@ -67,6 +67,8 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [filterPayment, setFilterPayment] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
 
+  const getRoundedAmount = (amount: number) => Math.round(amount / 10) * 10;
+
   const selectedItemData = items.find(i => i.id === selectedItem);
   const total = selectedItemData ? selectedItemData.sellingPrice * quantity : 0;
 
@@ -320,7 +322,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                 setSelectedItem(e.target.value); 
                 setQuantity(1); 
                 const itm = items.find(i => i.id === e.target.value);
-                setCustomPaidAmount(itm ? itm.sellingPrice : '');
+                setCustomPaidAmount(itm ? getRoundedAmount(itm.sellingPrice) : '');
               }}
               required
             >
@@ -350,7 +352,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                 onChange={e => {
                   const q = parseInt(e.target.value) || 1;
                   setQuantity(q);
-                  if (selectedItemData) setCustomPaidAmount(q * selectedItemData.sellingPrice);
+                  if (selectedItemData) setCustomPaidAmount(getRoundedAmount(q * selectedItemData.sellingPrice));
                 }}
                 required
               />
