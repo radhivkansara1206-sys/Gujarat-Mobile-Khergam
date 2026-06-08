@@ -8,6 +8,8 @@ export async function recordReplacement(data: {
   itemId: string;
   quantity: number;
   reason?: string;
+  exchangeItemId?: string;
+  cashCollected?: number;
 }) {
   try {
     const session = await requireAuth();
@@ -25,30 +27,69 @@ export async function recordReplacement(data: {
       return { error: 'Item not found' };
     }
 
-    if (item.stock < data.quantity) {
-      return { error: `Insufficient stock. Only ${item.stock} units available.` };
+    if (data.exchangeItemId) {
+      const exchangeItem = await prisma.item.findUnique({ where: { id: data.exchangeItemId } });
+      if (!exchangeItem) return { error: 'Exchange item not found' };
+      if (exchangeItem.stock < data.quantity) {
+        return { error: `Insufficient stock for exchange item. Only ${exchangeItem.stock} units available.` };
+      }
+    } else {
+      if (item.stock < data.quantity) {
+        return { error: `Insufficient stock. Only ${item.stock} units available.` };
+      }
     }
 
     const replacement = await prisma.$transaction(async (tx) => {
       // Create replacement record
+      let finalReason = data.reason || 'Defective item replaced';
+      let exchangeItemName = '';
+      if (data.exchangeItemId) {
+        const exchangeItem = await tx.item.findUnique({ where: { id: data.exchangeItemId } });
+        if (exchangeItem) {
+          exchangeItemName = exchangeItem.name;
+          finalReason = `Exchanged for ${exchangeItem.name}. ${data.reason || ''}`.trim();
+        }
+      }
+
       const newReplacement = await tx.replacement.create({
         data: {
           itemId: data.itemId,
           userId: session.id,
           quantity: data.quantity,
-          reason: data.reason || 'Defective item replaced',
+          reason: finalReason,
         },
       });
 
       // Update item stock
+      const targetItemId = data.exchangeItemId || data.itemId;
       await tx.item.update({
-        where: { id: data.itemId },
+        where: { id: targetItemId },
         data: {
           stock: {
             decrement: data.quantity,
           },
         },
       });
+
+      // Handle Cash Difference if any
+      if (data.cashCollected && data.cashCollected > 0) {
+        const activeRegister = await tx.cashRegister.findFirst({
+          where: { status: 'OPEN' },
+          orderBy: { openedAt: 'desc' }
+        });
+        if (activeRegister) {
+          await tx.cashMovement.create({
+            data: {
+              registerId: activeRegister.id,
+              userId: session.id,
+              type: 'ADDITION',
+              amount: data.cashCollected,
+              reason: 'Exchange Price Difference',
+              notes: `Exchanged ${item.name} for ${exchangeItemName || 'another item'}`,
+            }
+          });
+        }
+      }
 
       // Create admin notification
       await tx.notification.create({

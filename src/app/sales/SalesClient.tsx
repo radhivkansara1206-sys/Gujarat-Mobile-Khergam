@@ -60,6 +60,11 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [quantity, setQuantity] = useState(1);
   const [customPaidAmount, setCustomPaidAmount] = useState<number | ''>('');
   const [paymentType, setPaymentType] = useState<'cash' | 'online' | 'gift'>('cash');
+  
+  // Exchange states
+  const [isExchange, setIsExchange] = useState(false);
+  const [exchangeItemId, setExchangeItemId] = useState('');
+  const [cashCollected, setCashCollected] = useState<number | ''>('');
 
   // Filters
   const [startDate, setStartDate] = useState('');
@@ -70,6 +75,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const getRoundedAmount = (amount: number) => Math.round(amount / 10) * 10;
 
   const selectedItemData = items.find(i => i.id === selectedItem);
+  const exchangeItemData = items.find(i => i.id === exchangeItemId);
   const total = selectedItemData ? selectedItemData.sellingPrice * quantity : 0;
 
   async function handleRecordSale(e: React.FormEvent<HTMLFormElement>) {
@@ -117,12 +123,17 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
       itemId: formData.get('itemId') as string,
       quantity: Number(formData.get('quantity')),
       reason: formData.get('reason') as string,
+      exchangeItemId: isExchange ? exchangeItemId : undefined,
+      cashCollected: isExchange && cashCollected !== '' ? Number(cashCollected) : undefined,
     });
     if (result.success) {
       showToast('Replacement recorded successfully! Stock updated.');
       setShowReplacementModal(false);
       setSelectedItem(null);
       setQuantity(1);
+      setIsExchange(false);
+      setExchangeItemId('');
+      setCashCollected('');
       router.refresh();
     } else {
       showToast(result.error || 'Failed to record replacement', 'error');
@@ -498,6 +509,55 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
             </div>
           )}
 
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', marginBottom: '1rem' }}>
+            <input 
+              type="checkbox" 
+              id="isExchange" 
+              checked={isExchange} 
+              onChange={e => setIsExchange(e.target.checked)} 
+              style={{ width: '1.25rem', height: '1.25rem' }} 
+            />
+            <label htmlFor="isExchange" style={{ margin: 0, fontWeight: 600 }}>Replace with a different item (Exchange/Upgrade)</label>
+          </div>
+
+          {isExchange && (
+            <div style={{ padding: '1rem', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe', marginBottom: '1rem' }}>
+              <div className="form-group">
+                <label className="form-label">Item Given to Customer *</label>
+                <select
+                  className="form-input"
+                  value={exchangeItemId}
+                  onChange={(e) => setExchangeItemId(e.target.value)}
+                  required={isExchange}
+                >
+                  <option value="">-- Choose Exchange Item --</option>
+                  {groupedItems.map((group) => (
+                    <optgroup key={`exch-${group.category}`} label={group.category}>
+                      {group.items.map((item) => (
+                        <option key={`exch-${item.id}`} value={item.id} disabled={item.stock <= 0}>
+                          {item.name} ({item.stock > 0 ? `${item.stock} in stock` : 'Out of stock'})
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Cash Collected for Difference (₹)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={cashCollected}
+                  onChange={(e) => setCashCollected(e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="0"
+                  min="0"
+                />
+                <span className="form-hint" style={{ color: '#1e40af', display: 'block', marginTop: '0.25rem' }}>This amount will be directly added to your Cash Drawer.</span>
+              </div>
+            </div>
+          )}
+
           <div className="form-group">
             <label className="form-label">Quantity to Replace *</label>
             <input
@@ -507,7 +567,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
               value={quantity}
               onChange={(e) => setQuantity(Number(e.target.value))}
               min="1"
-              max={selectedItemData?.stock || 1}
+              max={isExchange ? (exchangeItemData?.stock || 999) : (selectedItemData?.stock || 1)}
               required
             />
           </div>
