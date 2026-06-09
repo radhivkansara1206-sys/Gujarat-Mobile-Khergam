@@ -327,7 +327,7 @@ export async function updateSaleTime(saleId: string, newTimeStr: string) {
         });
         if (newRegister) registersToUpdate.add(newRegister.id);
 
-        for (const regId of registersToUpdate) {
+        for (const regId of Array.from(registersToUpdate)) {
           const targetRegister = await tx.cashRegister.findUnique({ where: { id: regId } });
           if (!targetRegister || !targetRegister.closedAt) continue;
 
