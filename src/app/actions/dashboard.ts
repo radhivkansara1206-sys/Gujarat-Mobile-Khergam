@@ -264,17 +264,24 @@ export async function getDailySummaryAction(dateStr: string) {
 
     let expectedCash = 0;
     if (register) {
+      const previousRegister = await prisma.cashRegister.findFirst({
+        where: { status: 'CLOSED', closedAt: { lte: register.openedAt } },
+        orderBy: { closedAt: 'desc' }
+      });
+      const startTime = previousRegister?.closedAt || register.openedAt;
+      const endTime = register.status === 'CLOSED' ? register.closedAt : nextDay;
+
       const registerSales = await prisma.sale.aggregate({
         where: {
           paymentType: 'cash',
-          createdAt: { gte: register.openedAt }
+          createdAt: { gte: startTime, ...(endTime ? { lte: endTime } : {}) }
         },
         _sum: { totalAmount: true }
       });
       
       const registerExpenses = await prisma.expense.aggregate({
         where: {
-          createdAt: { gte: register.openedAt }
+          createdAt: { gte: startTime, ...(endTime ? { lte: endTime } : {}) }
         },
         _sum: { amount: true }
       });

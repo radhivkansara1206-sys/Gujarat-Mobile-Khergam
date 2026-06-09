@@ -62,14 +62,54 @@ export async function recordExpense(formData: FormData) {
       if (!openRegister) return { success: false, error: 'Cannot record expense for today: Drawer is closed. Please open the ROJMEL first.' };
     }
 
-    const expense = await prisma.expense.create({
-      data: {
-        amount,
-        category,
-        description,
-        userId: session.id,
-        createdAt,
+    const expense = await prisma.$transaction(async (tx) => {
+      const exp = await tx.expense.create({
+        data: {
+          amount,
+          category,
+          description,
+          userId: session.id, // Note: session.id is used here
+          createdAt,
+        }
+      });
+
+      const targetRegister = await tx.cashRegister.findFirst({
+        where: { status: 'CLOSED', closedAt: { gte: exp.createdAt } },
+        orderBy: { closedAt: 'asc' }
+      });
+
+      if (targetRegister && targetRegister.closedAt) {
+        const prevReg = await tx.cashRegister.findFirst({
+          where: { status: 'CLOSED', closedAt: { lte: targetRegister.openedAt } },
+          orderBy: { closedAt: 'desc' }
+        });
+        const startTime = prevReg?.closedAt || targetRegister.openedAt;
+
+        const rSales = await tx.sale.aggregate({
+          where: { paymentType: 'cash', createdAt: { gte: startTime, lte: targetRegister.closedAt } },
+          _sum: { totalAmount: true }
+        });
+        const rExpenses = await tx.expense.aggregate({
+          where: { createdAt: { gte: startTime, lte: targetRegister.closedAt } },
+          _sum: { amount: true }
+        });
+        const moves = await tx.cashMovement.findMany({
+          where: { registerId: targetRegister.id, createdAt: { lte: targetRegister.closedAt } }
+        });
+        
+        const adds = moves.filter(m => m.type === 'ADDITION').reduce((a, b) => a + b.amount, 0);
+        const rems = moves.filter(m => m.type === 'REMOVAL').reduce((a, b) => a + b.amount, 0);
+
+        const expectedClosing = targetRegister.openingBalance + (rSales._sum.totalAmount || 0) + adds - (rExpenses._sum.amount || 0) - rems;
+        const discrepancy = (targetRegister.closingBalance || 0) - expectedClosing;
+
+        await tx.cashRegister.update({
+          where: { id: targetRegister.id },
+          data: { expectedClosingBalance: expectedClosing, discrepancyAmount: discrepancy }
+        });
       }
+
+      return exp;
     });
 
     revalidatePath('/', 'layout');

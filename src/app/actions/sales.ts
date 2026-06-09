@@ -122,6 +122,45 @@ export async function recordSale(formData: FormData) {
         data: { stock: { decrement: quantity } },
       });
 
+      // Recalculate frozen closed register if backdated sale fell into it
+      if (paymentType === 'cash') {
+        const targetRegister = await tx.cashRegister.findFirst({
+          where: { status: 'CLOSED', closedAt: { gte: sale.createdAt } },
+          orderBy: { closedAt: 'asc' }
+        });
+
+        if (targetRegister && targetRegister.closedAt) {
+          const prevReg = await tx.cashRegister.findFirst({
+            where: { status: 'CLOSED', closedAt: { lte: targetRegister.openedAt } },
+            orderBy: { closedAt: 'desc' }
+          });
+          const startTime = prevReg?.closedAt || targetRegister.openedAt;
+
+          const rSales = await tx.sale.aggregate({
+            where: { paymentType: 'cash', createdAt: { gte: startTime, lte: targetRegister.closedAt } },
+            _sum: { totalAmount: true }
+          });
+          const rExpenses = await tx.expense.aggregate({
+            where: { createdAt: { gte: startTime, lte: targetRegister.closedAt } },
+            _sum: { amount: true }
+          });
+          const moves = await tx.cashMovement.findMany({
+            where: { registerId: targetRegister.id, createdAt: { lte: targetRegister.closedAt } }
+          });
+          
+          const adds = moves.filter(m => m.type === 'ADDITION').reduce((a, b) => a + b.amount, 0);
+          const rems = moves.filter(m => m.type === 'REMOVAL').reduce((a, b) => a + b.amount, 0);
+
+          const expectedClosing = targetRegister.openingBalance + (rSales._sum.totalAmount || 0) + adds - (rExpenses._sum.amount || 0) - rems;
+          const discrepancy = (targetRegister.closingBalance || 0) - expectedClosing;
+
+          await tx.cashRegister.update({
+            where: { id: targetRegister.id },
+            data: { expectedClosingBalance: expectedClosing, discrepancyAmount: discrepancy }
+          });
+        }
+      }
+
       return sale;
     });
 

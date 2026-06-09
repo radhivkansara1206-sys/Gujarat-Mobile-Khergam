@@ -22,20 +22,27 @@ export async function getRegisterStatus() {
     });
 
     if (openRegister) {
+      // Find the last closed register to compute startTime seamlessly
+      const previousRegister = await prisma.cashRegister.findFirst({
+        where: { status: 'CLOSED', closedAt: { lte: openRegister.openedAt } },
+        orderBy: { closedAt: 'desc' }
+      });
+      const startTime = previousRegister?.closedAt || openRegister.openedAt;
+
       // Calculate current expected cash
-      // Expected = Opening Balance + (Cash Sales since openedAt) - (Cash Expenses since openedAt) + Additions - Removals
+      // Expected = Opening Balance + (Cash Sales since startTime) - (Cash Expenses since startTime) + Additions - Removals
       
       const sales = await prisma.sale.aggregate({
         where: {
           paymentType: 'cash',
-          createdAt: { gte: openRegister.openedAt }
+          createdAt: { gte: startTime }
         },
         _sum: { totalAmount: true }
       });
       
       const expenses = await prisma.expense.aggregate({
         where: {
-          createdAt: { gte: openRegister.openedAt }
+          createdAt: { gte: startTime }
         },
         _sum: { amount: true }
       });
@@ -123,18 +130,24 @@ export async function closeRegister(data: { actualClosingBalance: number, expect
 
     const closedDate = data.closedAt ? new Date(data.closedAt) : new Date();
 
+    const previousRegister = await prisma.cashRegister.findFirst({
+      where: { status: 'CLOSED', closedAt: { lte: openRegister.openedAt } },
+      orderBy: { closedAt: 'desc' }
+    });
+    const startTime = previousRegister?.closedAt || openRegister.openedAt;
+
     // Recalculate expected closing balance exactly up to `closedDate`
     const sales = await prisma.sale.aggregate({
       where: {
         paymentType: 'cash',
-        createdAt: { gte: openRegister.openedAt, lte: closedDate }
+        createdAt: { gte: startTime, lte: closedDate }
       },
       _sum: { totalAmount: true }
     });
     
     const expenses = await prisma.expense.aggregate({
       where: {
-        createdAt: { gte: openRegister.openedAt, lte: closedDate }
+        createdAt: { gte: startTime, lte: closedDate }
       },
       _sum: { amount: true }
     });
