@@ -265,6 +265,174 @@ export default function RegisterClient({ initialData, historyData, isAdmin }: { 
     }
   }
 
+  const renderHistoryAndModals = () => (
+    <>
+      {/* History Section */}
+      <div className="card" style={{ marginTop: '3rem' }}>
+        <h2 className="section-title">ROJMEL History</h2>
+        {history.length === 0 ? (
+          <p className="text-secondary text-center" style={{ padding: '2rem 0' }}>No past registers found.</p>
+        ) : (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Opened</th>
+                  <th>Closed</th>
+                  <th>Opening Bal.</th>
+                  <th>Closing Bal.</th>
+                  <th>Discrepancy</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((reg: any) => (
+                  <tr key={reg.id}>
+                    <td>
+                      <div>{formatDateTime(reg.openedAt)}</div>
+                      <div className="text-secondary" style={{ fontSize: '0.8rem' }}>by {reg.openedBy?.name}</div>
+                    </td>
+                    <td>
+                      {reg.closedAt ? (
+                        <>
+                          <div>{formatDateTime(reg.closedAt)}</div>
+                          <div className="text-secondary" style={{ fontSize: '0.8rem' }}>by {reg.closedBy?.name}</div>
+                        </>
+                      ) : '-'}
+                    </td>
+                    <td className="font-semibold">{formatCurrency(reg.openingBalance)}</td>
+                    <td className="font-semibold text-primary">{reg.closingBalance ? formatCurrency(reg.closingBalance) : '-'}</td>
+                    <td>
+                      {reg.discrepancyAmount !== 0 ? (
+                        <span className={`badge ${reg.discrepancyAmount > 0 ? 'badge-success' : 'badge-danger'}`} title={reg.discrepancyReason}>
+                          {reg.discrepancyAmount > 0 ? '+' : ''}{formatCurrency(reg.discrepancyAmount)}
+                        </span>
+                      ) : (
+                        <span className="text-secondary">Perfect</span>
+                      )}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="btn btn-secondary btn-sm" onClick={() => handleViewDetails(reg)}>
+                          Details
+                        </button>
+                        {isAdmin && (
+                          <button className="btn btn-ghost btn-sm text-primary" onClick={() => {
+                            setEditingRegister(reg);
+                            setEditClosingBalance(reg.closingBalance || '');
+                            setEditClosingReason(reg.discrepancyReason || '');
+                          }}>
+                            Edit
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Edit Closed Register Modal */}
+      <Modal isOpen={!!editingRegister} onClose={() => setEditingRegister(null)} title="Edit Closed Register">
+        {editingRegister && (
+          <form onSubmit={handleEditClosedRegister}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+              Editing this closing balance will automatically recalculate the opening balance for the subsequent drawer, ensuring continuous flow without fake errors.
+            </p>
+            <div className="form-group">
+              <label className="form-label">Corrected Closing Balance (₹) *</label>
+              <input 
+                type="number" 
+                className="form-input" 
+                value={editClosingBalance} 
+                onChange={e => setEditClosingBalance(e.target.value === '' ? '' : Number(e.target.value))} 
+                required 
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">Reason for Correction *</label>
+              <input 
+                className="form-input" 
+                value={editClosingReason} 
+                onChange={e => setEditClosingReason(e.target.value)} 
+                required 
+                placeholder="e.g. Recounted cash, missed 500 note"
+              />
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setEditingRegister(null)}>Cancel</button>
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? 'Saving...' : 'Save & Cascade'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* View Details Modal */}
+      <Modal isOpen={!!viewingDetails} onClose={() => setViewingDetails(null)} title="ROJMEL Details" size="lg">
+        {viewingDetails?.loading ? (
+          <div className="text-center" style={{ padding: '2rem' }}>Loading details...</div>
+        ) : viewingDetails?.data ? (
+          <div>
+            <div className="stats-grid stats-grid-3" style={{ marginBottom: '2rem' }}>
+              <div className="stat-card">
+                <div className="stat-card-label">Opening Balance</div>
+                <div className="stat-card-value">{formatCurrency(viewingDetails.data.register.openingBalance)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-card-label">Closing Balance</div>
+                <div className="stat-card-value text-primary">{formatCurrency(viewingDetails.data.register.closingBalance)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-card-label">Expected Balance</div>
+                <div className="stat-card-value">{formatCurrency(viewingDetails.data.register.expectedClosingBalance)}</div>
+              </div>
+            </div>
+
+            <h3 style={{ marginTop: '1.5rem', marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: 600 }}>Cash Sales ({viewingDetails.data.sales.length})</h3>
+            <div className="table-scroll" style={{ maxHeight: '200px', marginBottom: '1rem' }}>
+              <table className="data-table" style={{ fontSize: '0.85rem' }}>
+                <tbody>
+                  {viewingDetails.data.sales.map((s: any) => (
+                    <tr key={s.id}>
+                      <td className="text-secondary">{new Date(s.createdAt).toLocaleTimeString()}</td>
+                      <td>{s.item?.name} x{s.quantity}</td>
+                      <td className="font-semibold text-success">+{formatCurrency(s.totalAmount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <h3 style={{ marginTop: '1.5rem', marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: 600 }}>Cash Expenses ({viewingDetails.data.expenses.length})</h3>
+            <div className="table-scroll" style={{ maxHeight: '200px', marginBottom: '1rem' }}>
+              <table className="data-table" style={{ fontSize: '0.85rem' }}>
+                <tbody>
+                  {viewingDetails.data.expenses.map((e: any) => (
+                    <tr key={e.id}>
+                      <td className="text-secondary">{new Date(e.createdAt).toLocaleTimeString()}</td>
+                      <td>{e.category} - {e.description}</td>
+                      <td className="font-semibold text-danger">-{formatCurrency(e.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: '2rem' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setViewingDetails(null)}>Close</button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+    </>
+  );
+
   if (!data?.isOpen) {
     // CLOSED STATE
     return (
@@ -363,6 +531,8 @@ export default function RegisterClient({ initialData, historyData, isAdmin }: { 
             </div>
           </form>
         </Modal>
+
+        {renderHistoryAndModals()}
       </div>
     );
   }
@@ -600,169 +770,7 @@ export default function RegisterClient({ initialData, historyData, isAdmin }: { 
         )}
       </Modal>
 
-      {/* History Section */}
-      <div className="card" style={{ marginTop: '3rem' }}>
-        <h2 className="section-title">ROJMEL History</h2>
-        {history.length === 0 ? (
-          <p className="text-secondary text-center" style={{ padding: '2rem 0' }}>No past registers found.</p>
-        ) : (
-          <div className="table-scroll">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Opened</th>
-                  <th>Closed</th>
-                  <th>Opening Bal.</th>
-                  <th>Closing Bal.</th>
-                  <th>Discrepancy</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((reg: any) => (
-                  <tr key={reg.id}>
-                    <td>
-                      <div>{formatDateTime(reg.openedAt)}</div>
-                      <div className="text-secondary" style={{ fontSize: '0.8rem' }}>by {reg.openedBy?.name}</div>
-                    </td>
-                    <td>
-                      {reg.closedAt ? (
-                        <>
-                          <div>{formatDateTime(reg.closedAt)}</div>
-                          <div className="text-secondary" style={{ fontSize: '0.8rem' }}>by {reg.closedBy?.name}</div>
-                        </>
-                      ) : '-'}
-                    </td>
-                    <td className="font-semibold">{formatCurrency(reg.openingBalance)}</td>
-                    <td className="font-semibold text-primary">{reg.closingBalance ? formatCurrency(reg.closingBalance) : '-'}</td>
-                    <td>
-                      {reg.discrepancyAmount !== 0 ? (
-                        <span className={`badge ${reg.discrepancyAmount > 0 ? 'badge-success' : 'badge-danger'}`} title={reg.discrepancyReason}>
-                          {reg.discrepancyAmount > 0 ? '+' : ''}{formatCurrency(reg.discrepancyAmount)}
-                        </span>
-                      ) : (
-                        <span className="text-secondary">Perfect</span>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleViewDetails(reg)}>
-                          Details
-                        </button>
-                        {isAdmin && (
-                          <button className="btn btn-ghost btn-sm text-primary" onClick={() => {
-                            setEditingRegister(reg);
-                            setEditClosingBalance(reg.closingBalance || '');
-                            setEditClosingReason(reg.discrepancyReason || '');
-                          }}>
-                            Edit
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Edit Closed Register Modal */}
-      <Modal isOpen={!!editingRegister} onClose={() => setEditingRegister(null)} title="Edit Closed Register">
-        {editingRegister && (
-          <form onSubmit={handleEditClosedRegister}>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-              Editing this closing balance will automatically recalculate the opening balance for the subsequent drawer, ensuring continuous flow without fake errors.
-            </p>
-            <div className="form-group">
-              <label className="form-label">Corrected Closing Balance (₹) *</label>
-              <input 
-                type="number" 
-                className="form-input" 
-                value={editClosingBalance} 
-                onChange={e => setEditClosingBalance(e.target.value === '' ? '' : Number(e.target.value))} 
-                required 
-              />
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label">Reason for Correction *</label>
-              <input 
-                className="form-input" 
-                value={editClosingReason} 
-                onChange={e => setEditClosingReason(e.target.value)} 
-                required 
-                placeholder="e.g. Recounted cash, missed 500 note"
-              />
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setEditingRegister(null)}>Cancel</button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Saving...' : 'Save & Cascade'}
-              </button>
-            </div>
-          </form>
-        )}
-      </Modal>
-
-      {/* View Details Modal */}
-      <Modal isOpen={!!viewingDetails} onClose={() => setViewingDetails(null)} title="ROJMEL Details" size="lg">
-        {viewingDetails?.loading ? (
-          <div className="text-center" style={{ padding: '2rem' }}>Loading details...</div>
-        ) : viewingDetails?.data ? (
-          <div>
-            <div className="stats-grid stats-grid-3" style={{ marginBottom: '2rem' }}>
-              <div className="stat-card">
-                <div className="stat-card-label">Opening Balance</div>
-                <div className="stat-card-value">{formatCurrency(viewingDetails.data.register.openingBalance)}</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-label">Closing Balance</div>
-                <div className="stat-card-value text-primary">{formatCurrency(viewingDetails.data.register.closingBalance)}</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-label">Expected Balance</div>
-                <div className="stat-card-value">{formatCurrency(viewingDetails.data.register.expectedClosingBalance)}</div>
-              </div>
-            </div>
-
-            <h3 style={{ marginTop: '1.5rem', marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: 600 }}>Cash Sales ({viewingDetails.data.sales.length})</h3>
-            <div className="table-scroll" style={{ maxHeight: '200px', marginBottom: '1rem' }}>
-              <table className="data-table" style={{ fontSize: '0.85rem' }}>
-                <tbody>
-                  {viewingDetails.data.sales.map((s: any) => (
-                    <tr key={s.id}>
-                      <td className="text-secondary">{new Date(s.createdAt).toLocaleTimeString()}</td>
-                      <td>{s.item?.name} x{s.quantity}</td>
-                      <td className="font-semibold text-success">+{formatCurrency(s.totalAmount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <h3 style={{ marginTop: '1.5rem', marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: 600 }}>Cash Expenses ({viewingDetails.data.expenses.length})</h3>
-            <div className="table-scroll" style={{ maxHeight: '200px', marginBottom: '1rem' }}>
-              <table className="data-table" style={{ fontSize: '0.85rem' }}>
-                <tbody>
-                  {viewingDetails.data.expenses.map((e: any) => (
-                    <tr key={e.id}>
-                      <td className="text-secondary">{new Date(e.createdAt).toLocaleTimeString()}</td>
-                      <td>{e.category} - {e.description}</td>
-                      <td className="font-semibold text-danger">-{formatCurrency(e.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="modal-actions" style={{ marginTop: '2rem' }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setViewingDetails(null)}>Close</button>
-            </div>
-          </div>
-        ) : null}
-      </Modal>
+      {renderHistoryAndModals()}
 
     </div>
   );
