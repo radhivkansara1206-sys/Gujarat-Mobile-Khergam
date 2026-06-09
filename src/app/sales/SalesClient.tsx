@@ -42,6 +42,11 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
   const [optimisticSales, setOptimisticSales] = useState(initialSales.sales);
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  
+  // WhatsApp Receipt State
+  const [receiptSale, setReceiptSale] = useState<any>(null);
+  const [customerPhone, setCustomerPhone] = useState('');
+  
   const { showToast } = useToast();
   const router = useRouter();
 
@@ -193,6 +198,33 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
     setLoading(false);
   }
 
+  function handleSendReceipt(e: React.FormEvent) {
+    e.preventDefault();
+    if (!receiptSale) return;
+    
+    let phone = customerPhone.replace(/\D/g, '');
+    if (phone.length === 10) phone = '91' + phone;
+
+    const dt = new Date(receiptSale.createdAt).toLocaleString('en-IN');
+    const text = `*GUJARAT MOBILE KHERGAM*
+--------------------------------
+*Digital Receipt*
+Date: ${dt}
+Item: ${receiptSale.item?.name} ${receiptSale.item?.brand ? `(${receiptSale.item?.brand})` : ''}
+Quantity: ${receiptSale.quantity}
+Payment: ${receiptSale.paymentType.toUpperCase()}
+*Total: ₹${receiptSale.totalAmount}*
+--------------------------------
+Thank you for shopping with us! 🙏`;
+
+    const encodedText = encodeURIComponent(text);
+    const url = `https://wa.me/${phone}?text=${encodedText}`;
+    
+    window.open(url, '_blank');
+    setReceiptSale(null);
+    setCustomerPhone('');
+  }
+
   return (
     <div>
       <BackButton />
@@ -302,7 +334,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                   <th>Payment</th>
                   <th>Details</th>
                   <th>By</th>
-                  {isAdmin && <th>Actions</th>}
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -417,16 +449,18 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                       {!sale.referenceNumber && !sale.notes && '—'}
                     </td>
                     <td className="text-secondary">{sale.user?.name}</td>
-                    {isAdmin && (
-                      <td>
-                        <button className="btn btn-ghost btn-sm text-danger" onClick={() => setDeletingSale(sale)} title="Delete Sale">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                          </svg>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <button className="btn btn-ghost btn-sm text-success" onClick={() => setReceiptSale(sale)} title="Send WhatsApp Receipt">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                         </button>
-                      </td>
-                    )}
+                        {isAdmin && (
+                          <button className="btn btn-ghost btn-sm text-danger" onClick={() => setDeletingSale(sale)} title="Delete Sale">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -793,6 +827,41 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
           </div>
         )}
       </Modal>
+
+      {/* WhatsApp Receipt Modal */}
+      <Modal isOpen={!!receiptSale} onClose={() => setReceiptSale(null)} title="Send Digital Receipt" size="sm">
+        {receiptSale && (
+          <form onSubmit={handleSendReceipt}>
+            <div className="form-group">
+              <label className="form-label">Customer WhatsApp Number *</label>
+              <div style={{ display: 'flex' }}>
+                <span style={{ padding: '0.75rem', background: 'var(--bg-main)', border: '1px solid var(--border)', borderRight: 'none', borderRadius: '8px 0 0 8px', color: 'var(--text-secondary)' }}>+91</span>
+                <input 
+                  type="tel" 
+                  className="form-input" 
+                  style={{ borderRadius: '0 8px 8px 0' }}
+                  placeholder="9876543210" 
+                  value={customerPhone}
+                  onChange={e => setCustomerPhone(e.target.value)}
+                  pattern="[0-9]*"
+                  minLength={10}
+                  maxLength={10}
+                  required 
+                />
+              </div>
+              <p className="form-hint" style={{ marginTop: '0.5rem' }}>This will open WhatsApp in a new tab with a pre-filled professional receipt message.</p>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setReceiptSale(null)}>Cancel</button>
+              <button type="submit" className="btn btn-primary" style={{ background: '#25D366', borderColor: '#25D366', color: 'white' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '0.5rem' }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                Open WhatsApp
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
     </div>
   );
 }
