@@ -24,20 +24,32 @@ export async function recordSale(formData: FormData) {
       return { success: false, error: 'Payment type must be cash, online, or gift' };
     }
 
+    const cookieStore = cookies();
+    const offsetStr = cookieStore.get('timezoneOffset')?.value;
+    const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
+
     const dateStr = formData.get('date') as string;
     let createdAt = new Date();
     
     if (dateStr) {
-      createdAt = new Date(dateStr);
+      const bounds = getLocalDayBounds(dateStr, offsetMinutes);
+      // Attempt to find a register for this date to align the time perfectly
+      const register = await prisma.cashRegister.findFirst({
+        where: { openedAt: { gte: bounds.start, lt: bounds.end } },
+        orderBy: { openedAt: 'asc' }
+      });
+      if (register) {
+        // Fall exactly inside the register! (1 min after opening to be safe)
+        createdAt = new Date(register.openedAt.getTime() + 60000);
+      } else {
+        // Just use midday local time
+        createdAt = new Date(bounds.start.getTime() + 12 * 3600000);
+      }
     }
     
     // Automated validation logging
     console.log(`[Validation Log] Client date payload received: "${dateStr}"`);
     console.log(`[Validation Log] Storing in database as (UTC): "${createdAt.toISOString()}"`);
-
-    const cookieStore = cookies();
-    const offsetStr = cookieStore.get('timezoneOffset')?.value;
-    const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
 
     const getLocalDateStr = (date: Date, offset: number) => {
       const localTime = new Date(date.getTime() - offset * 60000);
@@ -184,5 +196,29 @@ export async function deleteSale(saleId: string) {
   } catch (error: any) {
     console.error('Delete sale error:', error);
     return { success: false, error: error.message || 'Failed to delete sale' };
+  }
+}
+
+export async function updateSalePaymentType(id: string, paymentType: string) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+      return { success: false, error: 'Unauthorized: Only admins can edit payment types' };
+    }
+
+    if (!['cash', 'online', 'gift'].includes(paymentType)) {
+      return { success: false, error: 'Invalid payment type' };
+    }
+
+    const sale = await prisma.sale.update({
+      where: { id },
+      data: { paymentType }
+    });
+
+    revalidatePath('/', 'layout');
+    return { success: true, data: sale };
+  } catch (error: any) {
+    console.error('Update payment type error:', error);
+    return { success: false, error: 'Failed to update payment type' };
   }
 }

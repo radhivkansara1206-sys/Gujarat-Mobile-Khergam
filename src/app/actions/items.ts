@@ -45,7 +45,8 @@ export async function createItem(formData: FormData) {
     const purchasePrice = parseFloat(formData.get('purchasePrice') as string) || 0;
     const sellingPrice = parseFloat(formData.get('sellingPrice') as string) || 0;
     const stock = parseInt(formData.get('stock') as string) || 0;
-    const lowStockThreshold = parseInt(formData.get('lowStockThreshold') as string) || 5;
+    const lowStockRaw = formData.get('lowStockThreshold') as string;
+    const lowStockThreshold = lowStockRaw !== null && lowStockRaw !== '' ? parseInt(lowStockRaw) : 5;
 
     if (!categoryId) return { success: false, error: 'Category is required' };
     if (!name || name.trim().length === 0) return { success: false, error: 'Item name is required' };
@@ -87,7 +88,8 @@ export async function updateItem(id: string, formData: FormData) {
     const purchasePrice = parseFloat(formData.get('purchasePrice') as string);
     const sellingPrice = parseFloat(formData.get('sellingPrice') as string);
     const stock = parseInt(formData.get('stock') as string);
-    const lowStockThreshold = parseInt(formData.get('lowStockThreshold') as string);
+    const lowStockRaw = formData.get('lowStockThreshold') as string;
+    const lowStockThreshold = lowStockRaw !== null && lowStockRaw !== '' ? parseInt(lowStockRaw) : 5;
 
     if (!name || name.trim().length === 0) return { success: false, error: 'Item name is required' };
 

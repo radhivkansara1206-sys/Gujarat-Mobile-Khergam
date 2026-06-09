@@ -21,20 +21,29 @@ export async function recordExpense(formData: FormData) {
     const description = formData.get('description') as string || '';
     
     // Date override
+    const cookieStore = cookies();
+    const offsetStr = cookieStore.get('timezoneOffset')?.value;
+    const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
+
     const dateStr = formData.get('date') as string;
     let createdAt = new Date();
     
     if (dateStr) {
-      createdAt = new Date(dateStr);
+      const bounds = getLocalDayBounds(dateStr, offsetMinutes);
+      const register = await prisma.cashRegister.findFirst({
+        where: { openedAt: { gte: bounds.start, lt: bounds.end } },
+        orderBy: { openedAt: 'asc' }
+      });
+      if (register) {
+        createdAt = new Date(register.openedAt.getTime() + 60000);
+      } else {
+        createdAt = new Date(bounds.start.getTime() + 12 * 3600000);
+      }
     }
     
     // Automated validation logging
     console.log(`[Validation Log] Client date payload received (Expense): "${dateStr}"`);
     console.log(`[Validation Log] Storing in database as (UTC) (Expense): "${createdAt.toISOString()}"`);
-
-    const cookieStore = cookies();
-    const offsetStr = cookieStore.get('timezoneOffset')?.value;
-    const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
 
     const getLocalDateStr = (date: Date, offset: number) => {
       const localTime = new Date(date.getTime() - offset * 60000);

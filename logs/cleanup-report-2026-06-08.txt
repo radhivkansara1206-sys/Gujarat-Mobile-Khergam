@@ -9,21 +9,21 @@
 • Old Notifications Removed: *0*
 • DB Space Recovered: *Optimized (0 dead tuples)*
 • Webapp Cache Cleaned: *Clean (Under 300MB)*
-• Total DB Size: *568 KB*
-• Webapp Cache Size: *147.74 MB*
+• Total DB Size: *752 KB*
+• Webapp Cache Size: *159.69 MB*
 • Index & Schema Health: *Excellent*
 
 📈 *DAILY STORE REPORT*
-• Total Sales: *₹0* (0 bills)
-  - Cash Sales: *₹0*
-  - Online Sales: *₹0*
+• Total Sales: *₹649* (4 bills)
+  - Cash Sales: *₹550*
+  - Online Sales: *₹99*
 • Total Expenses: *₹0* (0 records)
-• Gifts Given: *0* units
-• Defective Replacements: *0* units
+• Gifts Given: *2* units
+• Defective Replacements: *1* units
 
 🔄 *STORE NET REVENUE*
-• Net Revenue: *₹0*
-• Expected Counter Cash: *₹0*
+• Net Revenue: *₹649*
+• Expected Counter Cash: *₹550*
 
 ⚠️ *LOW STOCK ALERTS*
 • *0* items are running low on stock!

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
-import { recordSale, getSales, deleteSale } from '@/app/actions/sales';
+import { recordSale, getSales, deleteSale, updateSalePaymentType } from '@/app/actions/sales';
 import { recordReplacement } from '@/app/actions/replacements';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
@@ -39,6 +39,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [deletingSale, setDeletingSale] = useState<any>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
   const { showToast } = useToast();
   const router = useRouter();
 
@@ -307,9 +308,41 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                     <td>{formatCurrency(sale.unitPrice)}</td>
                     <td className="font-semibold">{formatCurrency(sale.totalAmount)}</td>
                     <td>
-                      <span className={`payment-badge ${sale.paymentType}`}>
-                        {sale.paymentType === 'cash' ? '₹ Cash' : sale.paymentType === 'online' ? '📱 Online' : '🎁 Gift'}
-                      </span>
+                      {isAdmin ? (
+                        <select
+                          value={sale.paymentType}
+                          disabled={updatingPaymentId === sale.id}
+                          onChange={async (e) => {
+                            setUpdatingPaymentId(sale.id);
+                            const res = await updateSalePaymentType(sale.id, e.target.value);
+                            setUpdatingPaymentId(null);
+                            if (res.success) {
+                              showToast('Payment type updated');
+                              router.refresh();
+                            } else {
+                              showToast(res.error || 'Failed to update', 'error');
+                            }
+                          }}
+                          style={{
+                            padding: '0.25rem 1.5rem 0.25rem 0.5rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            borderRadius: '999px',
+                            border: '1px solid transparent',
+                            background: sale.paymentType === 'cash' ? 'var(--success-light)' : sale.paymentType === 'online' ? 'var(--info-light)' : '#fdf2f8',
+                            color: sale.paymentType === 'cash' ? 'var(--success-dark)' : sale.paymentType === 'online' ? 'var(--info-dark)' : '#9d174d',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="cash">₹ Cash</option>
+                          <option value="online">📱 Online</option>
+                          <option value="gift">🎁 Gift</option>
+                        </select>
+                      ) : (
+                        <span className={`payment-badge ${sale.paymentType}`}>
+                          {sale.paymentType === 'cash' ? '₹ Cash' : sale.paymentType === 'online' ? '📱 Online' : '🎁 Gift'}
+                        </span>
+                      )}
                     </td>
                     <td className="text-secondary">
                       {sale.referenceNumber && <div style={{ marginBottom: '2px' }}>{sale.referenceNumber}</div>}

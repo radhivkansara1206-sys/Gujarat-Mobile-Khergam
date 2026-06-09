@@ -123,3 +123,30 @@ Running VACUUM ANALYZE on Notification table...
 ----------------------------------------
 [FINISHED] 08-06-2026 12:01:44.11 
 ================================================== 
+================================================== 
+[START] 08-06-2026 23:30:07.22 
+Starting daily scan and cleanup... 
+--- STARTING HOURLY/DAILY AUTOMATED SCANNERS ---
+[2026-06-08T18:00:08.429Z] Starting optimization triggered via automatic...
+Running VACUUM ANALYZE on Notification table...
+Next.js cache size (159.69 MB) is within limit (300MB). No cleanup needed.
+--- CLEANUP AND OPTIMIZATION RESULTS ---
+{
+  "success": true,
+  "message": "Completed Successfully",
+  "readNotificationsRemoved": 0,
+  "oldNotificationsRemoved": 0,
+  "spaceRecovered": "0 KB",
+  "totalDbSize": "752 KB",
+  "nextCacheSpaceRecovered": "0 KB",
+  "nextCacheSize": "159.69 MB",
+  "salesTotal": 649,
+  "salesCount": 4,
+  "netRevenue": 649,
+  "lowStockCount": 0,
+  "whatsappStatus": "Not configured / Failed to send",
+  "reportText": "📱 *GUJARAT MOBILE KHERGAM*\n🧹 *Automated DB & Webapp Cleanup & Optimization*\n📅 *Date:* 08 June 2026\n🔌 *Source:* AUTOMATIC\n\n━━━━━━━━━━━━━━━━━━━━\n🧹 *CLEANUP & OPTIMIZATION*\n• Read Notifications Removed: *0*\n• Old Notifications Removed: *0*\n• DB Space Recovered: *Optimized (0 dead tuples)*\n• Webapp Cache Cleaned: *Clean (Under 300MB)*\n• Total DB Size: *752 KB*\n• Webapp Cache Size: *159.69 MB*\n• Index & Schema Health: *Excellent*\n\n📈 *DAILY STORE REPORT*\n• Total Sales: *₹649* (4 bills)\n  - Cash Sales: *₹550*\n  - Online Sales: *₹99*\n• Total Expenses: *₹0* (0 records)\n• Gifts Given: *2* units\n• Defective Replacements: *1* units\n\n🔄 *STORE NET REVENUE*\n• Net Revenue: *₹649*\n• Expected Counter Cash: *₹550*\n\n⚠️ *LOW STOCK ALERTS*\n• *0* items are running low on stock!\n━━━━━━━━━━━━━━━━━━━━\n⚡ *Status:* All systems clean & fully optimized."
+}
+----------------------------------------
+[FINISHED] 08-06-2026 23:30:18.86 
+================================================== 
