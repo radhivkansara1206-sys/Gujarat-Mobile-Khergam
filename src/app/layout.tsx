@@ -26,9 +26,9 @@ export default async function RootLayout({
     try {
       const items = await prisma.item.findMany({
         where: { isActive: true },
-        select: { stock: true, lowStockThreshold: true }
+        select: { stock: true, lowStockThreshold: true, isAlertDismissed: true }
       });
-      const lowStockCount = items.filter(item => item.stock <= item.lowStockThreshold).length;
+      const lowStockCount = items.filter(item => item.stock <= item.lowStockThreshold && !item.isAlertDismissed).length;
 
       const unreadNotifications = await prisma.notification.count({
         where: { isRead: false }

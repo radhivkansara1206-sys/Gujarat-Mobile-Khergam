@@ -11,6 +11,7 @@ export async function recordSale(formData: FormData) {
     const session = await getSession();
     if (!session) return { success: false, error: 'Unauthorized' };
 
+    const isCustomItem = formData.get('isCustomItem') === 'true';
     const itemId = formData.get('itemId') as string;
     const quantity = parseInt(formData.get('quantity') as string);
     const paidAmount = parseFloat(formData.get('paidAmount') as string);
@@ -18,7 +19,7 @@ export async function recordSale(formData: FormData) {
     const referenceNumber = (formData.get('referenceNumber') as string) || '';
     const notes = (formData.get('notes') as string) || '';
 
-    if (!itemId) return { success: false, error: 'Item is required' };
+    if (!isCustomItem && !itemId) return { success: false, error: 'Item is required' };
     if (!quantity || quantity <= 0) return { success: false, error: 'Quantity must be greater than 0' };
     if (!paymentType || !['cash', 'online', 'gift'].includes(paymentType)) {
       return { success: false, error: 'Payment type must be cash, online, or gift' };
@@ -67,20 +68,47 @@ export async function recordSale(formData: FormData) {
 
     // Atomic transaction: create sale + deduct stock
     const result = await prisma.$transaction(async (tx) => {
-      // Check current stock
-      const item = await tx.item.findUnique({ where: { id: itemId } });
-      if (!item) throw new Error('Item not found');
-      if (!item.isActive) throw new Error('Item is no longer available');
-      if (item.stock < quantity) throw new Error(`Insufficient stock. Available: ${item.stock}`);
+      let finalItemId = itemId;
+      let unitPrice = 0;
+
+      if (isCustomItem) {
+        const customName = formData.get('customName') as string;
+        const customBrand = (formData.get('customBrand') as string) || '';
+        const customCategoryId = formData.get('customCategoryId') as string;
+        const customPrice = parseFloat(formData.get('customPrice') as string) || 0;
+
+        if (!customName || !customCategoryId) throw new Error('Custom item name and category are required');
+
+        // Create the item with stock = quantity, so after sale it becomes 0
+        const newItem = await tx.item.create({
+          data: {
+            name: customName.trim() + ' (Custom/Unlisted)',
+            brand: customBrand.trim(),
+            categoryId: customCategoryId,
+            sellingPrice: customPrice,
+            purchasePrice: 0,
+            stock: quantity,
+            lowStockThreshold: 0,
+          }
+        });
+        finalItemId = newItem.id;
+        unitPrice = customPrice;
+      } else {
+        const item = await tx.item.findUnique({ where: { id: finalItemId } });
+        if (!item) throw new Error('Item not found');
+        if (!item.isActive) throw new Error('Item is no longer available');
+        if (item.stock < quantity) throw new Error(`Insufficient stock. Available: ${item.stock}`);
+        unitPrice = item.sellingPrice;
+      }
 
       // Create sale record
       const sale = await tx.sale.create({
         data: {
-          itemId,
+          itemId: finalItemId,
           userId: session.userId,
           quantity,
-          unitPrice: item.sellingPrice,
-          totalAmount: !isNaN(paidAmount) ? paidAmount : item.sellingPrice * quantity,
+          unitPrice: unitPrice,
+          totalAmount: !isNaN(paidAmount) ? paidAmount : unitPrice * quantity,
           paymentType,
           referenceNumber,
           notes,
@@ -90,7 +118,7 @@ export async function recordSale(formData: FormData) {
 
       // Deduct stock
       await tx.item.update({
-        where: { id: itemId },
+        where: { id: finalItemId },
         data: { stock: { decrement: quantity } },
       });
 

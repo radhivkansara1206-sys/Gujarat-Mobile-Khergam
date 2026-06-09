@@ -61,6 +61,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [quantity, setQuantity] = useState(1);
   const [customPaidAmount, setCustomPaidAmount] = useState<number | ''>('');
   const [paymentType, setPaymentType] = useState<'cash' | 'online' | 'gift'>('cash');
+  const [isCustomItem, setIsCustomItem] = useState(false);
   
   // Exchange states
   const [isExchange, setIsExchange] = useState(false);
@@ -371,32 +372,70 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
       {/* Record Sale Modal */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Record Sale" size="lg">
         <form onSubmit={handleRecordSale}>
-          <div className="form-group">
-            <label className="form-label">Select Item *</label>
-            <select
-              name="itemId"
-              className="form-select"
-              value={selectedItem || ''}
-              onChange={e => { 
-                setSelectedItem(e.target.value); 
-                setQuantity(1); 
-                const itm = items.find(i => i.id === e.target.value);
-                setCustomPaidAmount(itm ? getRoundedAmount(itm.sellingPrice) : '');
-              }}
-              required
-            >
-              <option value="">Choose an item...</option>
-              {groupedItems.map(group => (
-                <optgroup key={group.category} label={group.category}>
-                  {group.items.map(item => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}{item.brand ? ` (${item.brand})` : ''} — {formatCurrency(item.sellingPrice)} — Stock: {item.stock}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <input type="checkbox" id="customItemToggle" name="isCustomItem" value="true" checked={isCustomItem} onChange={e => setIsCustomItem(e.target.checked)} style={{ width: '1.25rem', height: '1.25rem' }} />
+            <label htmlFor="customItemToggle" style={{ margin: 0, fontWeight: 600, color: 'var(--primary-hover)', cursor: 'pointer' }}>➕ Sell Custom / Unlisted Item</label>
           </div>
+
+          {!isCustomItem ? (
+            <div className="form-group">
+              <label className="form-label">Select Item *</label>
+              <select
+                name="itemId"
+                className="form-select"
+                value={selectedItem || ''}
+                onChange={e => { 
+                  setSelectedItem(e.target.value); 
+                  setQuantity(1); 
+                  const itm = items.find(i => i.id === e.target.value);
+                  setCustomPaidAmount(itm ? getRoundedAmount(itm.sellingPrice) : '');
+                }}
+                required={!isCustomItem}
+              >
+                <option value="">Choose an item...</option>
+                {groupedItems.map(group => (
+                  <optgroup key={group.category} label={group.category}>
+                    {group.items.map(item => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}{item.brand ? ` (${item.brand})` : ''} — {formatCurrency(item.sellingPrice)} — Stock: {item.stock}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div style={{ padding: '1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '1rem' }}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Item Name *</label>
+                  <input name="customName" type="text" className="form-input" required={isCustomItem} placeholder="e.g. Type-C Cable" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Brand (Optional)</label>
+                  <input name="customBrand" type="text" className="form-input" placeholder="e.g. Samsung" />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Category *</label>
+                  <select name="customCategoryId" className="form-select" required={isCustomItem}>
+                    <option value="">Choose category...</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Unit Price (₹) *</label>
+                  <input name="customPrice" type="number" className="form-input" required={isCustomItem} min="0" onChange={e => {
+                    if (quantity > 0) setCustomPaidAmount(Number(e.target.value) * quantity);
+                  }} />
+                </div>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                Note: This item will be automatically saved to your inventory after this sale.
+              </p>
+            </div>
+          )}
 
           <div className="form-row">
             <div className="form-group">
@@ -406,7 +445,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                 type="number"
                 className="form-input"
                 min="1"
-                max={selectedItemData?.stock || 999}
+                max={!isCustomItem ? (selectedItemData?.stock || 999) : 999}
                 value={quantity}
                 onChange={e => {
                   const q = parseInt(e.target.value) || 1;
@@ -415,7 +454,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                 }}
                 required
               />
-              {selectedItemData && (
+              {!isCustomItem && selectedItemData && (
                 <span className="form-hint">Available: {selectedItemData.stock}</span>
               )}
             </div>
