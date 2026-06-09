@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
-import { recordSale, getSales, deleteSale, updateSalePaymentType } from '@/app/actions/sales';
+import { recordSale, getSales, deleteSale, updateSalePaymentType, updateSaleTime } from '@/app/actions/sales';
 import { recordReplacement } from '@/app/actions/replacements';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
@@ -40,8 +40,14 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [deletingSale, setDeletingSale] = useState<any>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
+  const [optimisticSales, setOptimisticSales] = useState(initialSales.sales);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
   const { showToast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    setOptimisticSales(salesData.sales);
+  }, [salesData.sales]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -300,9 +306,69 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
                 </tr>
               </thead>
               <tbody>
-                {salesData.sales.map((sale: any) => (
-                  <tr key={sale.id} id={`row-${sale.id}`} className={highlightedId === sale.id ? 'highlighted-row' : ''}>
-                    <td className="text-secondary">{formatDateTime(sale.createdAt)}</td>
+                {optimisticSales.map((sale: any, index: number) => (
+                  <tr 
+                    key={sale.id} 
+                    id={`row-${sale.id}`} 
+                    className={`${highlightedId === sale.id ? 'highlighted-row' : ''} ${draggedId === sale.id ? 'dragging-row' : ''}`}
+                    draggable={isAdmin}
+                    onDragStart={(e) => {
+                      if (!isAdmin) return;
+                      setDraggedId(sale.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onDragOver={(e) => {
+                      if (!isAdmin) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    }}
+                    onDrop={async (e) => {
+                      if (!isAdmin) return;
+                      e.preventDefault();
+                      if (!draggedId || draggedId === sale.id) {
+                        setDraggedId(null);
+                        return;
+                      }
+
+                      const draggedIdx = optimisticSales.findIndex((s: any) => s.id === draggedId);
+                      const targetIdx = index;
+
+                      if (draggedIdx === -1) return;
+
+                      const newSales = [...optimisticSales];
+                      const [moved] = newSales.splice(draggedIdx, 1);
+                      newSales.splice(targetIdx, 0, moved);
+
+                      let timeAbove = newSales[targetIdx - 1]?.createdAt;
+                      let timeBelow = newSales[targetIdx + 1]?.createdAt;
+
+                      const dAbove = timeAbove ? new Date(timeAbove).getTime() : Date.now();
+                      const dBelow = timeBelow ? new Date(timeBelow).getTime() : dAbove - 3600000;
+
+                      const newTimeMs = Math.floor((dAbove + dBelow) / 2);
+                      const newTime = new Date(newTimeMs);
+
+                      moved.createdAt = newTime.toISOString();
+                      setOptimisticSales(newSales);
+                      setDraggedId(null);
+                      
+                      const res = await updateSaleTime(moved.id, newTime.toISOString());
+                      if (!res.success) {
+                         showToast(res.error || 'Failed to reorder sale', 'error');
+                         setOptimisticSales(salesData.sales);
+                      } else {
+                         router.refresh();
+                      }
+                    }}
+                    onDragEnd={() => setDraggedId(null)}
+                    style={{ cursor: isAdmin ? 'grab' : 'default', opacity: draggedId === sale.id ? 0.5 : 1 }}
+                  >
+                    <td className="text-secondary">
+                      {isAdmin && (
+                        <span style={{ marginRight: '8px', cursor: 'grab', color: 'var(--text-muted)' }}>⋮⋮</span>
+                      )}
+                      {formatDateTime(sale.createdAt)}
+                    </td>
                     <td className="font-semibold">{sale.item?.name}</td>
                     <td className="text-secondary">{sale.item?.category?.name}</td>
                     <td>{sale.quantity}</td>
