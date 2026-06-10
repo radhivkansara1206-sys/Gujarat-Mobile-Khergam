@@ -45,11 +45,14 @@ export default function ExpensesClient({ initialData, defaultStartDate }: Expens
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     
-    // Parse custom date and time
-    const dateInput = formData.get('date') as string;
+    // Combine date and time inputs into local timezone Date
+    const dateInput = formData.get('date') as string; // YYYY-MM-DD
+    const timeInput = formData.get('time') as string; // HH:MM
     let finalDate = new Date();
-    if (dateInput) {
-      finalDate = new Date(dateInput);
+    if (dateInput && timeInput) {
+      const [year, month, day] = dateInput.split('-').map(Number);
+      const [hours, minutes] = timeInput.split(':').map(Number);
+      finalDate = new Date(year, month - 1, day, hours, minutes, 0);
     }
     formData.set('date', finalDate.toISOString());
 
@@ -229,21 +232,39 @@ export default function ExpensesClient({ initialData, defaultStartDate }: Expens
             </div>
           </div>
           
-          <div className="form-group">
-            <label className="form-label">Date & Time *</label>
-            <input 
-              name="date" 
-              type="datetime-local" 
-              className="form-input" 
-              required
-              defaultValue={(() => {
-                const d = new Date();
-                d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-                return d.toISOString().slice(0, 16);
-              })()} 
-            />
-            <p className="form-hint">Select the exact date and time at which the money was given.</p>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Date *</label>
+              <input 
+                name="date" 
+                type="date" 
+                className="form-input" 
+                required
+                defaultValue={(() => {
+                  const d = new Date();
+                  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                  return d.toISOString().slice(0, 10);
+                })()} 
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Time *</label>
+              <input 
+                name="time" 
+                type="time" 
+                className="form-input" 
+                required
+                defaultValue={(() => {
+                  const d = new Date();
+                  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                  return d.toISOString().slice(11, 16);
+                })()} 
+              />
+            </div>
           </div>
+          <p className="form-hint" style={{ marginTop: '-0.75rem', marginBottom: '1rem' }}>
+            Specify the exact date and time when the money was spent.
+          </p>
 
           <div className="form-group">
             <label className="form-label">Description / Notes</label>
