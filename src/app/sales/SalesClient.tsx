@@ -87,7 +87,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [filterPayment, setFilterPayment] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
 
-  const getRoundedAmount = (amount: number) => Math.round(amount / 10) * 10;
+  const getRoundedAmount = (amount: number) => amount;
 
   const selectedItemData = items.find(i => i.id === selectedItem);
   const exchangeItemData = items.find(i => i.id === exchangeItemId);
@@ -569,6 +569,16 @@ Thank you for shopping with us! 🙏`;
                 onChange={e => setCustomPaidAmount(e.target.value === '' ? '' : Number(e.target.value))}
                 required
               />
+              {!isCustomItem && selectedItemData && customPaidAmount !== '' && quantity > 0 && (
+                Number(customPaidAmount) / quantity !== selectedItemData.sellingPrice
+              ) && (
+                <div style={{ marginTop: '0.5rem', background: 'var(--warning-light)', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', margin: 0, color: '#854d0e' }}>
+                    <input type="checkbox" name="updateDefaultPrice" value="true" />
+                    <strong>Update default inventory price to ₹{Number(customPaidAmount) / quantity}?</strong>
+                  </label>
+                </div>
+              )}
             </div>
           </div>
 

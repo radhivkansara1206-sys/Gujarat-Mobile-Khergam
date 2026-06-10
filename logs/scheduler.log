@@ -150,3 +150,116 @@ Next.js cache size (159.69 MB) is within limit (300MB). No cleanup needed.
 ----------------------------------------
 [FINISHED] 08-06-2026 23:30:18.86 
 ================================================== 
+================================================== 
+[START] 10-06-2026 17:53:07.44 
+Starting daily scan and cleanup... 
+--- STARTING HOURLY/DAILY AUTOMATED SCANNERS ---
+[2026-06-10T12:23:10.725Z] Starting optimization triggered via automatic...
+prisma:error 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Can't reach database server at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`.
+Could not query database table sizes before: PrismaClientInitializationError: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Can't reach database server at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`.
+    at ei.handleRequestError (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at async a (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async optimizeAndReport (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\src\lib\optimizer.ts:46:23)
+    at async run (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\scripts\cleanup-and-optimize.ts:5:18) {
+  clientVersion: '6.19.3',
+  errorCode: undefined,
+  retryable: undefined
+}
+prisma:error 
+Invalid `prisma.notification.deleteMany()` invocation in
+C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\src\lib\optimizer.ts:68:51
+
+  65 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  66 
+  67 // Delete read notifications older than 7 days
+→ 68 const readCleanup = await prisma.notification.deleteMany(
+Can't reach database server at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`.
+Error performing database cleanup & optimization: PrismaClientInitializationError: 
+Invalid `prisma.notification.deleteMany()` invocation in
+C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\src\lib\optimizer.ts:68:51
+
+  65 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  66 
+  67 // Delete read notifications older than 7 days
+→ 68 const readCleanup = await prisma.notification.deleteMany(
+Can't reach database server at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`.
+    at ei.handleRequestError (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at async a (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async optimizeAndReport (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\src\lib\optimizer.ts:68:25)
+    at async run (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\scripts\cleanup-and-optimize.ts:5:18) {
+  clientVersion: '6.19.3',
+  errorCode: undefined,
+  retryable: undefined
+}
+prisma:error 
+Invalid `prisma.sale.findMany()` invocation in
+C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\src\lib\optimizer.ts:183:37
+
+  180 todayEnd.setDate(todayEnd.getDate() + 1);
+  181 
+  182 // Sales
+→ 183 const sales = await prisma.sale.findMany(
+Can't reach database server at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`.
+Error gathering daily summary stats: PrismaClientInitializationError: 
+Invalid `prisma.sale.findMany()` invocation in
+C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\src\lib\optimizer.ts:183:37
+
+  180 todayEnd.setDate(todayEnd.getDate() + 1);
+  181 
+  182 // Sales
+→ 183 const sales = await prisma.sale.findMany(
+Can't reach database server at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`.
+    at ei.handleRequestError (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\RequestHandler.ts:242:13)
+    at ei.handleAndLogRequestError (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at async a (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async optimizeAndReport (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\src\lib\optimizer.ts:183:19)
+    at async run (C:\Users\Rv\.gemini\antigravity\scratch\gujarat-mobile-khergam\scripts\cleanup-and-optimize.ts:5:18) {
+  clientVersion: '6.19.3',
+  errorCode: undefined,
+  retryable: undefined
+}
+--- CLEANUP AND OPTIMIZATION RESULTS ---
+{
+  "success": false,
+  "message": "Failed: \nInvalid `prisma.notification.deleteMany()` invocation in\nC:\\Users\\Rv\\.gemini\\antigravity\\scratch\\gujarat-mobile-khergam\\src\\lib\\optimizer.ts:68:51\n\n  65 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);\n  66 \n  67 // Delete read notifications older than 7 days\n→ 68 const readCleanup = await prisma.notification.deleteMany(\nCan't reach database server at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`\n\nPlease make sure your database server is running at `ep-raspy-butterfly-a7b9qug3.ap-southeast-2.aws.neon.tech:5432`.",
+  "readNotificationsRemoved": 0,
+  "oldNotificationsRemoved": 0,
+  "spaceRecovered": "0 KB",
+  "totalDbSize": "Unknown",
+  "nextCacheSpaceRecovered": "0 KB",
+  "nextCacheSize": "Unknown",
+  "salesTotal": 0,
+  "salesCount": 0,
+  "netRevenue": 0,
+  "lowStockCount": 0,
+  "whatsappStatus": "Not configured / Failed to send",
+  "reportText": "📱 *GUJARAT MOBILE KHERGAM*\n🧹 *Automated DB & Webapp Cleanup & Optimization*\n📅 *Date:* 10 June 2026\n🔌 *Source:* AUTOMATIC\n\n━━━━━━━━━━━━━━━━━━━━\n🧹 *CLEANUP & OPTIMIZATION*\n• Read Notifications Removed: *0*\n• Old Notifications Removed: *0*\n• DB Space Recovered: *Optimized (0 dead tuples)*\n• Webapp Cache Cleaned: *Clean (Under 300MB)*\n• Total DB Size: *Optimized*\n• Webapp Cache Size: *Unknown*\n• Index & Schema Health: *Excellent*\n\n📈 *DAILY STORE REPORT*\n• Total Sales: *₹0* (0 bills)\n  - Cash Sales: *₹0*\n  - Online Sales: *₹0*\n• Total Expenses: *₹0* (0 records)\n• Gifts Given: *0* units\n• Defective Replacements: *0* units\n\n🔄 *STORE NET REVENUE*\n• Net Revenue: *₹0*\n• Expected Counter Cash: *₹0*\n\n⚠️ *LOW STOCK ALERTS*\n• *0* items are running low on stock!\n━━━━━━━━━━━━━━━━━━━━\n⚡ *Status:* All systems clean & fully optimized."
+}
+----------------------------------------
+[FINISHED] 10-06-2026 17:53:25.90 
+================================================== 

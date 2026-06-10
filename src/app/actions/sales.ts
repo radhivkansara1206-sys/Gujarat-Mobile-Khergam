@@ -12,6 +12,7 @@ export async function recordSale(formData: FormData) {
     if (!session) return { success: false, error: 'Unauthorized' };
 
     const isCustomItem = formData.get('isCustomItem') === 'true';
+    const updateDefaultPrice = formData.get('updateDefaultPrice') === 'true';
     const itemId = formData.get('itemId') as string;
     const quantity = parseInt(formData.get('quantity') as string);
     const paidAmount = parseFloat(formData.get('paidAmount') as string);
@@ -25,41 +26,36 @@ export async function recordSale(formData: FormData) {
       return { success: false, error: 'Payment type must be cash, online, or gift' };
     }
 
+    const dateStr = formData.get('date') as string;
+    let createdAt = dateStr ? new Date(dateStr) : new Date();
+    
     const cookieStore = cookies();
     const offsetStr = cookieStore.get('timezoneOffset')?.value;
     const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
 
-    const dateStr = formData.get('date') as string;
-    let createdAt = new Date();
-    
-    if (dateStr) {
-      const bounds = getLocalDayBounds(dateStr, offsetMinutes);
-      // Attempt to find a register for this date to align the time perfectly
+    const getLocalDate = (d: Date) => new Date(d.getTime() - offsetMinutes * 60000);
+    const localCreatedAt = getLocalDate(createdAt);
+    const localNow = getLocalDate(new Date());
+
+    const isPastDate = 
+      localCreatedAt.getUTCFullYear() !== localNow.getUTCFullYear() ||
+      localCreatedAt.getUTCMonth() !== localNow.getUTCMonth() ||
+      localCreatedAt.getUTCDate() !== localNow.getUTCDate();
+
+    if (isPastDate) {
+      const bounds = getLocalDayBounds(
+        `${localCreatedAt.getUTCFullYear()}-${String(localCreatedAt.getUTCMonth() + 1).padStart(2, '0')}-${String(localCreatedAt.getUTCDate()).padStart(2, '0')}`, 
+        offsetMinutes
+      );
+      
       const register = await prisma.cashRegister.findFirst({
         where: { openedAt: { gte: bounds.start, lt: bounds.end } },
         orderBy: { openedAt: 'asc' }
       });
       if (register) {
-        // Fall exactly inside the register! (1 min after opening to be safe)
         createdAt = new Date(register.openedAt.getTime() + 60000);
-      } else {
-        // Just use midday local time
-        createdAt = new Date(bounds.start.getTime() + 12 * 3600000);
       }
     }
-    
-    // Automated validation logging
-    console.log(`[Validation Log] Client date payload received: "${dateStr}"`);
-    console.log(`[Validation Log] Storing in database as (UTC): "${createdAt.toISOString()}"`);
-
-    const getLocalDateStr = (date: Date, offset: number) => {
-      const localTime = new Date(date.getTime() - offset * 60000);
-      return `${localTime.getUTCFullYear()}-${String(localTime.getUTCMonth() + 1).padStart(2, '0')}-${String(localTime.getUTCDate()).padStart(2, '0')}`;
-    };
-
-    const saleDateStr = getLocalDateStr(createdAt, offsetMinutes);
-    const todayDateStr = getLocalDateStr(new Date(), offsetMinutes);
-    const isPastDate = saleDateStr !== todayDateStr;
 
     if (paymentType === 'cash' && !isPastDate) {
       const openRegister = await prisma.cashRegister.findFirst({ where: { status: 'OPEN' } });
@@ -99,6 +95,16 @@ export async function recordSale(formData: FormData) {
         if (!item.isActive) throw new Error('Item is no longer available');
         if (item.stock < quantity) throw new Error(`Insufficient stock. Available: ${item.stock}`);
         unitPrice = item.sellingPrice;
+        
+        // Update default price if requested
+        if (updateDefaultPrice && !isNaN(paidAmount) && quantity > 0) {
+          const newUnitPrice = paidAmount / quantity;
+          await tx.item.update({
+            where: { id: finalItemId },
+            data: { sellingPrice: newUnitPrice },
+          });
+          unitPrice = newUnitPrice;
+        }
       }
 
       // Create sale record
