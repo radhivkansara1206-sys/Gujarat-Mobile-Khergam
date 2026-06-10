@@ -117,9 +117,19 @@ export default function SummaryReceipt({ summaryData, closingDate, notes, denoms
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {summaryData.itemsSold.map((item: any, idx: number) => (
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                      <span style={{ color: '#334155' }}>
+                      <span style={{ color: '#334155', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                         {item.paymentType === 'gift' && '🎁 '}
-                        {item.name} <span style={{ color: '#94a3b8' }}>× {item.quantity}</span>
+                        <span>{item.name}</span>
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          fontWeight: 700, 
+                          color: item.paymentType === 'cash' ? '#059669' : item.paymentType === 'online' ? '#2563eb' : '#db2777', 
+                          marginLeft: '4px',
+                          marginRight: '4px'
+                        }}>
+                          [{item.paymentType === 'cash' ? 'Cash' : item.paymentType === 'online' ? 'Online' : 'Gift'}]
+                        </span>
+                        <span style={{ color: '#94a3b8' }}>× {item.quantity}</span>
                       </span>
                       <span style={{ fontWeight: 600, color: item.paymentType === 'gift' ? '#db2777' : '#0f172a' }}>
                         {item.paymentType === 'gift' ? 'Free' : formatCurrency(item.amount)}

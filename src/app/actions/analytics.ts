@@ -1,13 +1,13 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { getTodayBounds } from '@/lib/utils';
 
 export async function getAnalyticsData() {
   try {
-    await requireAuth();
+    await requireAdmin();
 
     const cookieStore = cookies();
     const offsetStr = cookieStore.get('timezoneOffset')?.value;
@@ -132,6 +132,9 @@ export async function getAnalyticsData() {
       }
     };
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
+      return { success: false, error: error.message };
+    }
     console.error('Analytics data error:', error);
     return { success: false, error: error.message || 'Failed to fetch analytics data' };
   }

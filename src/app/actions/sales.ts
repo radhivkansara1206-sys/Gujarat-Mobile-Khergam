@@ -185,6 +185,7 @@ export async function getSales(filters?: {
   categoryId?: string;
 }) {
   try {
+    await requireAuth();
     const where: any = {};
     
     const cookieStore = cookies();
@@ -234,7 +235,10 @@ export async function getSales(filters?: {
         count: sales.length,
       },
     };
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
+      return { success: false, error: error.message };
+    }
     console.error('Get sales error:', error);
     return { success: false, error: 'Failed to fetch sales' };
   }

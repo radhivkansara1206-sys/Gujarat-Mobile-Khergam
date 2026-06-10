@@ -168,18 +168,61 @@ export async function closeRegister(data: { actualClosingBalance: number, expect
     const calculatedExpectedCash = openRegister.openingBalance + cashSales + additions - cashExpenses - removals;
     const finalDiscrepancy = data.actualClosingBalance - calculatedExpectedCash;
 
-    const closed = await prisma.cashRegister.update({
-      where: { id: openRegister.id },
-      data: {
-        closingBalance: data.actualClosingBalance,
-        expectedClosingBalance: calculatedExpectedCash,
-        discrepancyAmount: finalDiscrepancy,
-        discrepancyReason: data.discrepancyReason || '',
-        closingNotes: data.closingNotes || '',
-        closedAt: closedDate,
-        closedById: session.userId,
-        status: 'CLOSED'
+    const closed = await prisma.$transaction(async (tx) => {
+      const closedReg = await tx.cashRegister.update({
+        where: { id: openRegister.id },
+        data: {
+          closingBalance: data.actualClosingBalance,
+          expectedClosingBalance: calculatedExpectedCash,
+          discrepancyAmount: finalDiscrepancy,
+          discrepancyReason: data.discrepancyReason || '',
+          closingNotes: data.closingNotes || '',
+          closedAt: closedDate,
+          closedById: session.userId,
+          status: 'CLOSED'
+        }
+      });
+
+      // Now cascade the opening balance to all succeeding registers chronologically
+      const subsequentRegisters = await tx.cashRegister.findMany({
+        where: { openedAt: { gt: openRegister.openedAt } },
+        orderBy: { openedAt: 'asc' }
+      });
+
+      if (subsequentRegisters.length > 0) {
+        const firstNext = subsequentRegisters[0];
+        const nextDiff = data.actualClosingBalance - firstNext.openingBalance;
+
+        if (nextDiff !== 0) {
+          let currentDiff = nextDiff;
+          for (const reg of subsequentRegisters) {
+            if (reg.status === 'CLOSED') {
+              await tx.cashRegister.update({
+                where: { id: reg.id },
+                data: {
+                  openingBalance: reg.openingBalance + currentDiff,
+                  expectedClosingBalance: reg.expectedClosingBalance !== null 
+                    ? reg.expectedClosingBalance + currentDiff 
+                    : null,
+                  closingBalance: reg.closingBalance !== null 
+                    ? reg.closingBalance + currentDiff 
+                    : null,
+                }
+              });
+            } else {
+              await tx.cashRegister.update({
+                where: { id: reg.id },
+                data: {
+                  openingBalance: reg.openingBalance + currentDiff,
+                }
+              });
+              break; // Stop at open register
+            }
+          }
+        }
       }
+
+      return closedReg;
     });
 
     if (finalDiscrepancy !== 0) {
@@ -319,35 +362,39 @@ export async function editClosedRegister(registerId: string, newClosingBalance: 
         }
       });
 
-      // Now cascade the "Continuous Flow" to the immediately next register
-      const nextRegister = await tx.cashRegister.findFirst({
-        where: { openedAt: { gte: target.closedAt! } },
-        orderBy: { openedAt: 'asc' }
-      });
+      // Now cascade the "Continuous Flow" to all subsequent registers chronologically
+      const diff = newClosingBalance - (target.closingBalance || 0);
 
-      if (nextRegister) {
-        // The difference in opening balance is the difference between the new and old closing balance
-        const diff = newClosingBalance - (target.closingBalance || 0);
-        
-        // The new expected closing balance shifts by the exact same amount
-        const newExpected = nextRegister.expectedClosingBalance !== null 
-          ? nextRegister.expectedClosingBalance + diff 
-          : null;
-
-        // If nextRegister is already closed, recalculate its discrepancy
-        let nextDiscrepancy = nextRegister.discrepancyAmount;
-        if (nextRegister.status === 'CLOSED' && nextRegister.closingBalance !== null && newExpected !== null) {
-          nextDiscrepancy = nextRegister.closingBalance - newExpected;
-        }
-
-        await tx.cashRegister.update({
-          where: { id: nextRegister.id },
-          data: {
-            openingBalance: nextRegister.openingBalance + diff,
-            expectedClosingBalance: newExpected,
-            discrepancyAmount: nextDiscrepancy
-          }
+      if (diff !== 0) {
+        const subsequentRegisters = await tx.cashRegister.findMany({
+          where: { openedAt: { gt: target.openedAt } },
+          orderBy: { openedAt: 'asc' }
         });
+
+        for (const reg of subsequentRegisters) {
+          if (reg.status === 'CLOSED') {
+            await tx.cashRegister.update({
+              where: { id: reg.id },
+              data: {
+                openingBalance: reg.openingBalance + diff,
+                expectedClosingBalance: reg.expectedClosingBalance !== null 
+                  ? reg.expectedClosingBalance + diff 
+                  : null,
+                closingBalance: reg.closingBalance !== null 
+                  ? reg.closingBalance + diff 
+                  : null,
+              }
+            });
+          } else {
+            await tx.cashRegister.update({
+              where: { id: reg.id },
+              data: {
+                openingBalance: reg.openingBalance + diff,
+              }
+            });
+            break; // Stop cascading once we reach today's open register
+          }
+        }
       }
 
       return updatedTarget;

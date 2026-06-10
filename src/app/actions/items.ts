@@ -1,7 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, requireAdmin } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
 export async function getItems(categoryId?: string) {
@@ -36,7 +36,7 @@ export async function getItem(id: string) {
 
 export async function createItem(formData: FormData) {
   try {
-    await requireAuth();
+    await requireAdmin();
     const categoryId = formData.get('categoryId') as string;
     const name = formData.get('name') as string;
     const brand = (formData.get('brand') as string) || '';
@@ -70,7 +70,7 @@ export async function createItem(formData: FormData) {
     revalidatePath('/', 'layout');
     return { success: true, data: item };
   } catch (error: any) {
-    if (error.message === 'Unauthorized') {
+    if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
       return { success: false, error: error.message };
     }
     console.error('Create item error:', error);
@@ -80,7 +80,7 @@ export async function createItem(formData: FormData) {
 
 export async function updateItem(id: string, formData: FormData) {
   try {
-    await requireAuth();
+    await requireAdmin();
     const name = formData.get('name') as string;
     const brand = formData.get('brand') as string;
     const model = formData.get('model') as string;
@@ -91,28 +91,29 @@ export async function updateItem(id: string, formData: FormData) {
     const lowStockRaw = formData.get('lowStockThreshold') as string;
     const lowStockThreshold = lowStockRaw !== null && lowStockRaw !== '' ? parseInt(lowStockRaw) : 5;
 
-    if (!name || name.trim().length === 0) return { success: false, error: 'Item name is required' };
+    if (formData.has('name') && (!name || name.trim().length === 0)) return { success: false, error: 'Item name is required' };
+
+    const updateData: any = {};
+    if (formData.has('name')) updateData.name = name.trim();
+    if (formData.has('brand')) updateData.brand = brand?.trim() || '';
+    if (formData.has('model')) updateData.model = model?.trim() || '';
+    if (formData.has('subCategory')) updateData.subCategory = subCategory?.trim() || '';
+    if (!isNaN(purchasePrice)) updateData.purchasePrice = purchasePrice;
+    if (!isNaN(sellingPrice)) updateData.sellingPrice = sellingPrice;
+    if (!isNaN(stock)) updateData.stock = stock;
+    if (formData.has('lowStockThreshold') && !isNaN(lowStockThreshold)) updateData.lowStockThreshold = lowStockThreshold;
+    updateData.isAlertDismissed = false; // Reset dismiss state on any update
 
     const item = await prisma.item.update({
       where: { id },
-      data: {
-        name: name.trim(),
-        brand: brand?.trim() || '',
-        model: model?.trim() || '',
-        subCategory: subCategory?.trim() || '',
-        ...(isNaN(purchasePrice) ? {} : { purchasePrice }),
-        ...(isNaN(sellingPrice) ? {} : { sellingPrice }),
-        ...(isNaN(stock) ? {} : { stock }),
-        ...(isNaN(lowStockThreshold) ? {} : { lowStockThreshold }),
-        isAlertDismissed: false, // Reset dismiss state on any update
-      },
+      data: updateData,
       include: { category: true },
     });
 
     revalidatePath('/', 'layout');
     return { success: true, data: item };
   } catch (error: any) {
-    if (error.message === 'Unauthorized') {
+    if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
       return { success: false, error: error.message };
     }
     console.error('Update item error:', error);
@@ -122,7 +123,7 @@ export async function updateItem(id: string, formData: FormData) {
 
 export async function deleteItem(id: string) {
   try {
-    await requireAuth();
+    await requireAdmin();
     
     const item = await prisma.item.update({
       where: { id },
@@ -132,7 +133,7 @@ export async function deleteItem(id: string) {
     revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: any) {
-    if (error.message === 'Unauthorized') {
+    if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
       return { success: false, error: error.message };
     }
     console.error('Delete item error:', error);

@@ -7,6 +7,7 @@ import { getLocalDayBounds, getTodayBounds } from '@/lib/utils';
 
 export async function getDashboardStats() {
   try {
+    await requireAuth();
     const cookieStore = cookies();
     const offsetStr = cookieStore.get('timezoneOffset')?.value;
     const offsetMinutes = offsetStr ? parseInt(offsetStr) : -330; // default to IST
@@ -64,7 +65,10 @@ export async function getDashboardStats() {
         outOfStockCount,
       },
     };
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
+      return { success: false, error: error.message };
+    }
     console.error('Dashboard stats error:', error);
     return { success: false, error: 'Failed to fetch dashboard stats' };
   }
@@ -72,6 +76,7 @@ export async function getDashboardStats() {
 
 export async function getRecentActivity() {
   try {
+    await requireAuth();
     const recentSales = await prisma.sale.findMany({
       take: 15,
       orderBy: { createdAt: 'desc' },
@@ -126,7 +131,10 @@ export async function getRecentActivity() {
       .slice(0, 15);
 
     return { success: true, data: activities };
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
+      return { success: false, error: error.message };
+    }
     console.error('Recent activity error:', error);
     return { success: false, error: 'Failed to fetch recent activity' };
   }
@@ -134,6 +142,7 @@ export async function getRecentActivity() {
 
 export async function getLowStockItems() {
   try {
+    await requireAuth();
     const items = await prisma.item.findMany({
       where: { isActive: true },
       include: { category: true },
@@ -144,7 +153,10 @@ export async function getLowStockItems() {
     const lowStockItems = items.filter(i => !i.isAlertDismissed && i.stock <= i.lowStockThreshold);
 
     return { success: true, data: lowStockItems };
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message?.includes('Forbidden')) {
+      return { success: false, error: error.message };
+    }
     console.error('Low stock items error:', error);
     return { success: false, error: 'Failed to fetch low stock items' };
   }

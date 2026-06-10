@@ -92,6 +92,7 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const selectedItemData = items.find(i => i.id === selectedItem);
   const exchangeItemData = items.find(i => i.id === exchangeItemId);
   const total = selectedItemData ? selectedItemData.sellingPrice * quantity : 0;
+  const displayTotal = (typeof customPaidAmount === 'number' && !isNaN(customPaidAmount)) ? customPaidAmount : total;
 
   useEffect(() => {
     if (isExchange && selectedItemData && exchangeItemData) {
@@ -663,8 +664,8 @@ Thank you for shopping with us! 🙏`;
 
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={loading || !selectedItem}>
-              {loading ? <><span className="spinner"></span> Recording...</> : paymentType === 'gift' ? 'Record Gift' : `Record Sale • ${formatCurrency(total)}`}
+            <button type="submit" className="btn btn-primary" disabled={loading || (!isCustomItem && !selectedItem)}>
+              {loading ? <><span className="spinner"></span> Recording...</> : paymentType === 'gift' ? 'Record Gift' : `Record Sale • ${formatCurrency(displayTotal)}`}
             </button>
           </div>
         </form>

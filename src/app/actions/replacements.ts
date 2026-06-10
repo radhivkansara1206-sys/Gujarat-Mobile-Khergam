@@ -94,18 +94,19 @@ export async function recordReplacement(data: {
           where: { status: 'OPEN' },
           orderBy: { openedAt: 'desc' }
         });
-        if (activeRegister) {
-          await tx.cashMovement.create({
-            data: {
-              registerId: activeRegister.id,
-              userId: session.id,
-              type: data.cashCollected > 0 ? 'ADDITION' : 'REMOVAL',
-              amount: Math.abs(data.cashCollected),
-              reason: 'Exchange Price Difference',
-              notes: `Exchanged ${item.name} for ${exchangeItemName || 'another item'}`,
-            }
-          });
+        if (!activeRegister) {
+          throw new Error('Cannot process cash transaction because cash drawer is closed. Please open the ROJMEL first.');
         }
+        await tx.cashMovement.create({
+          data: {
+            registerId: activeRegister.id,
+            userId: session.id,
+            type: data.cashCollected > 0 ? 'ADDITION' : 'REMOVAL',
+            amount: Math.abs(data.cashCollected),
+            reason: 'Exchange Price Difference',
+            notes: `Exchanged ${item.name} for ${exchangeItemName || 'another item'}`,
+          }
+        });
       }
 
       // Create admin notification
