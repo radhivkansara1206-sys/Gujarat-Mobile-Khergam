@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
-import { recordSale, getSales, deleteSale, updateSalePaymentType, updateSaleTime } from '@/app/actions/sales';
+import { recordSale, getSales, deleteSale, updateSalePaymentType, updateSaleTime, updateSaleAmount } from '@/app/actions/sales';
 import { recordReplacement } from '@/app/actions/replacements';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
@@ -46,6 +46,11 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   // WhatsApp Receipt State
   const [receiptSale, setReceiptSale] = useState<any>(null);
   const [customerPhone, setCustomerPhone] = useState('');
+
+  // Inline Edit Amount State
+  const [editingAmountId, setEditingAmountId] = useState<string | null>(null);
+  const [tempAmount, setTempAmount] = useState<string>('');
+  const [updatingAmountId, setUpdatingAmountId] = useState<string | null>(null);
   
   const { showToast } = useToast();
   const router = useRouter();
@@ -224,6 +229,30 @@ Thank you for shopping with us! 🙏`;
     window.open(url, '_blank');
     setReceiptSale(null);
     setCustomerPhone('');
+  }
+
+  async function handleSaveAmount(saleId: string, value: string) {
+    const amt = parseFloat(value);
+    if (isNaN(amt) || amt < 0) {
+      showToast('Invalid amount', 'error');
+      setEditingAmountId(null);
+      return;
+    }
+
+    setUpdatingAmountId(saleId);
+    const res = await updateSaleAmount(saleId, amt);
+    setUpdatingAmountId(null);
+    setEditingAmountId(null);
+
+    if (res.success) {
+      showToast('Sale amount updated successfully');
+      router.refresh();
+      // Refilter sales data
+      const refreshed = await getSales({ startDate, endDate, paymentType: filterPayment, categoryId: filterCategory });
+      if (refreshed.data) setSalesData(refreshed.data);
+    } else {
+      showToast(res.error || 'Failed to update amount', 'error');
+    }
   }
 
   return (
@@ -406,7 +435,53 @@ Thank you for shopping with us! 🙏`;
                     <td className="text-secondary">{sale.item?.category?.name}</td>
                     <td>{sale.quantity}</td>
                     <td>{formatCurrency(sale.unitPrice)}</td>
-                    <td className="font-semibold">{formatCurrency(sale.totalAmount)}</td>
+                    <td className="font-semibold">
+                      {isAdmin ? (
+                        editingAmountId === sale.id ? (
+                          <input
+                            type="number"
+                            value={tempAmount}
+                            onChange={(e) => setTempAmount(e.target.value)}
+                            onBlur={() => handleSaveAmount(sale.id, tempAmount)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleSaveAmount(sale.id, tempAmount);
+                              } else if (e.key === 'Escape') {
+                                setEditingAmountId(null);
+                              }
+                            }}
+                            autoFocus
+                            style={{
+                              width: '80px',
+                              padding: '2px 6px',
+                              fontSize: '0.9rem',
+                              borderRadius: '4px',
+                              border: '1px solid var(--primary)',
+                              background: '#fff',
+                              color: '#000'
+                            }}
+                            disabled={updatingAmountId === sale.id}
+                          />
+                        ) : (
+                          <span
+                            onClick={() => {
+                              setEditingAmountId(sale.id);
+                              setTempAmount(String(sale.totalAmount));
+                            }}
+                            title="Click to edit amount"
+                            style={{
+                              cursor: 'pointer',
+                              borderBottom: '1px dashed var(--text-secondary)',
+                              paddingBottom: '2px'
+                            }}
+                          >
+                            {formatCurrency(sale.totalAmount)}
+                          </span>
+                        )
+                      ) : (
+                        formatCurrency(sale.totalAmount)
+                      )}
+                    </td>
                     <td>
                       {isAdmin ? (
                         <select
