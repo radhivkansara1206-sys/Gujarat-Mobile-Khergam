@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Modal from '@/components/Modal';
 import { useToast } from '@/components/Toast';
-import { openRegister, closeRegister, addCashMovement, deleteCashMovement, editClosedRegister, getRegisterDetails } from '@/app/actions/register';
+import { openRegister, closeRegister, addCashMovement, deleteCashMovement, editClosedRegister, getRegisterDetails, reopenLastRegisterAction } from '@/app/actions/register';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -25,6 +25,10 @@ export default function RegisterClient({ initialData, historyData, isAdmin }: { 
   const [editingRegister, setEditingRegister] = useState<any>(null);
   const [editClosingBalance, setEditClosingBalance] = useState<number | string>('');
   const [editClosingReason, setEditClosingReason] = useState('');
+
+  // Emergency Reopen State
+  const [showReopenModal, setShowReopenModal] = useState(false);
+  const [reopenPin, setReopenPin] = useState('');
   
   const [viewingDetails, setViewingDetails] = useState<any>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -240,7 +244,7 @@ export default function RegisterClient({ initialData, historyData, isAdmin }: { 
     const res = await editClosedRegister(
       editingRegister.id, 
       Number(editClosingBalance), 
-      editingRegister.closingNotes, 
+      useCalculator ? JSON.stringify(denominations) : '', 
       editClosingReason
     );
     if (res.success) {
@@ -250,6 +254,22 @@ export default function RegisterClient({ initialData, historyData, isAdmin }: { 
       window.location.reload();
     } else {
       showToast(res.error || 'Failed to update register', 'error');
+    }
+    setLoading(false);
+  }
+
+  async function handleEmergencyReopen(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    const res = await reopenLastRegisterAction(reopenPin);
+    if (res.success) {
+      showToast('Drawer reopened successfully!');
+      setShowReopenModal(false);
+      setReopenPin('');
+      router.refresh();
+      window.location.reload();
+    } else {
+      showToast(res.error || 'Failed to reopen drawer', 'error');
     }
     setLoading(false);
   }
@@ -319,7 +339,26 @@ export default function RegisterClient({ initialData, historyData, isAdmin }: { 
                         {isAdmin && (
                           <button className="btn btn-ghost btn-sm text-primary" onClick={() => {
                             setEditingRegister(reg);
-                            setEditClosingBalance(reg.closingBalance || '');
+                            setEditClosingBalance(reg.closingBalance || 0);
+                            
+                            // Initialize calculator denominations
+                            let denomsObj = null;
+                            if (reg.closingNotes) {
+                              try {
+                                denomsObj = JSON.parse(reg.closingNotes);
+                              } catch (e) {
+                                // Ignore JSON parsing error
+                              }
+                            }
+                            
+                            if (denomsObj && typeof denomsObj === 'object' && '500' in denomsObj) {
+                              setDenominations(denomsObj);
+                              setUseCalculator(true);
+                            } else {
+                              setDenominations(autoFillDenominations(reg.closingBalance || 0));
+                              setUseCalculator(false);
+                            }
+                            
                             setEditClosingReason(reg.discrepancyReason || '');
                           }}>
                             Edit
@@ -343,13 +382,22 @@ export default function RegisterClient({ initialData, historyData, isAdmin }: { 
               Editing this closing balance will automatically recalculate the opening balance for the subsequent drawer, ensuring continuous flow without fake errors.
             </p>
             <div className="form-group">
-              <label className="form-label">Corrected Closing Balance (₹) *</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <label className="form-label" style={{ margin: 0 }}>Corrected Closing Balance (₹) *</label>
+                <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', color: 'var(--primary)', fontWeight: 500 }}>
+                  <input type="checkbox" checked={useCalculator} onChange={e => setUseCalculator(e.target.checked)} />
+                  Use Calculator
+                </label>
+              </div>
+              {useCalculator && renderCalculator(v => setEditClosingBalance(v))}
               <input 
                 type="number" 
                 className="form-input" 
                 value={editClosingBalance} 
                 onChange={e => setEditClosingBalance(e.target.value === '' ? '' : Number(e.target.value))} 
                 required 
+                readOnly={useCalculator}
+                style={useCalculator ? { background: 'var(--bg-main)', cursor: 'not-allowed' } : {}}
               />
             </div>
             
@@ -457,10 +505,54 @@ export default function RegisterClient({ initialData, historyData, isAdmin }: { 
           ) : (
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>No previous ROJMEL records found. (First time setup)</p>
           )}
-          <button className="btn btn-primary btn-lg" onClick={handleOpenModalClick} style={{ width: '100%' }}>
-            Open Drawer
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <button className="btn btn-primary btn-lg" onClick={handleOpenModalClick} style={{ width: '100%' }}>
+              Open Drawer
+            </button>
+            {data?.lastRegister && (
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={() => {
+                  setReopenPin('');
+                  setShowReopenModal(true);
+                }} 
+                style={{ width: '100%', borderColor: 'var(--danger)', color: 'var(--danger)' }}
+              >
+                🔓 Emergency Reopen Last Drawer
+              </button>
+            )}
+          </div>
         </div>
+
+        <Modal isOpen={showReopenModal} onClose={() => { setShowReopenModal(false); setReopenPin(''); }} title="Emergency Reopen Drawer">
+          <form onSubmit={handleEmergencyReopen}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+              If you closed the drawer by mistake, enter the 4-digit emergency PIN to reopen it.
+            </p>
+            <div className="form-group">
+              <label className="form-label">Emergency PIN Code *</label>
+              <input 
+                type="password" 
+                maxLength={4}
+                pattern="\d{4}"
+                placeholder="••••"
+                className="form-input" 
+                value={reopenPin} 
+                onChange={e => setReopenPin(e.target.value)} 
+                required 
+                style={{ textAlign: 'center', letterSpacing: '0.5rem', fontSize: '1.5rem', fontWeight: 'bold' }}
+              />
+              <span className="form-hint">Default code is 1234.</span>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => { setShowReopenModal(false); setReopenPin(''); }}>Cancel</button>
+              <button type="submit" className="btn btn-danger" disabled={loading}>
+                {loading ? 'Reopening...' : 'Confirm Reopen'}
+              </button>
+            </div>
+          </form>
+        </Modal>
 
         <Modal isOpen={showOpenModal} onClose={() => setShowOpenModal(false)} title="Open Drawer">
           <form onSubmit={handleOpenRegister}>

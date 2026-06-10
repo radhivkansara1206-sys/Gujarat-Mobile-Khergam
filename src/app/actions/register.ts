@@ -463,3 +463,56 @@ export async function getRegisterDetails(registerId: string) {
     return { success: false, error: 'Failed to fetch register details' };
   }
 }
+
+export async function reopenLastRegisterAction(pinCode: string) {
+  try {
+    const session = await getSession();
+    if (!session) return { success: false, error: 'Unauthorized' };
+
+    const expectedPin = process.env.EMERGENCY_REOPEN_PIN || '1234';
+    if (pinCode !== expectedPin) {
+      return { success: false, error: 'Incorrect 4-digit security PIN' };
+    }
+
+    // Check if there is already an open register
+    const openReg = await prisma.cashRegister.findFirst({
+      where: { status: 'OPEN' }
+    });
+    if (openReg) {
+      return { success: false, error: 'Cannot reopen: another drawer is currently open.' };
+    }
+
+    // Find the last closed register
+    const lastClosed = await prisma.cashRegister.findFirst({
+      where: { status: 'CLOSED' },
+      orderBy: { closedAt: 'desc' }
+    });
+
+    if (!lastClosed) {
+      return { success: false, error: 'No closed register found to reopen.' };
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // Reopen the register in database
+      const reopened = await tx.cashRegister.update({
+        where: { id: lastClosed.id },
+        data: {
+          status: 'OPEN',
+          closedAt: null,
+          closingBalance: null,
+          expectedClosingBalance: null,
+          discrepancyAmount: 0,
+          discrepancyReason: "",
+          closedById: null
+        }
+      });
+      return reopened;
+    });
+
+    revalidatePath('/', 'layout');
+    return { success: true, data: updated };
+  } catch (error: any) {
+    console.error('reopenLastRegisterAction error:', error);
+    return { success: false, error: error.message || 'Failed to reopen register' };
+  }
+}
