@@ -8,6 +8,7 @@ import { formatDate } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
+import { runManualOptimizationAction } from '@/app/actions/optimize';
 
 interface SettingsClientProps {
   users: any[];
@@ -23,6 +24,28 @@ export default function SettingsClient({ users, currentUserId }: SettingsClientP
   const router = useRouter();
   const [showPasswordAdd, setShowPasswordAdd] = useState(false);
   const [showPasswordEdit, setShowPasswordEdit] = useState(false);
+
+  // Optimization States
+  const [optimizing, setOptimizing] = useState(false);
+  const [optReport, setOptReport] = useState<string | null>(null);
+
+  async function handleRunOptimization() {
+    setOptimizing(true);
+    setOptReport(null);
+    try {
+      const result = await runManualOptimizationAction();
+      if (result.success && result.data) {
+        showToast('System optimization completed successfully!');
+        setOptReport(result.data.reportText || 'All systems optimized.');
+        router.refresh();
+      } else {
+        showToast(result.error || 'Optimization failed', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Optimization failed', 'error');
+    }
+    setOptimizing(false);
+  }
 
   async function handleAddUser(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -168,6 +191,41 @@ export default function SettingsClient({ users, currentUserId }: SettingsClientP
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* System Optimization Section */}
+      <div className="table-container" style={{ marginTop: '2rem', padding: '1.5rem' }}>
+        <h2 className="section-title" style={{ marginBottom: '0.5rem' }}>⚡ System Optimization & Maintenance</h2>
+        <p className="text-secondary" style={{ marginBottom: '1.25rem', fontSize: '0.9rem' }}>
+          Clean up weekly system junk, optimize database indices, clear expired cache, and ensure the application runs smoothly.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleRunOptimization} 
+            disabled={optimizing}
+            style={{ alignSelf: 'flex-start', background: 'var(--primary)', borderColor: 'var(--primary)', color: '#fff' }}
+          >
+            {optimizing ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className="spinner"></span> Running System Optimization...
+              </span>
+            ) : (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                </svg>
+                Optimize & Clean System Junk
+              </span>
+            )}
+          </button>
+          
+          {optReport && (
+            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)', fontFamily: 'monospace', fontSize: '0.85rem', whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>
+              {optReport}
+            </div>
+          )}
         </div>
       </div>
 

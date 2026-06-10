@@ -90,6 +90,13 @@ export async function optimizeAndReport(triggerSource: 'automatic' | 'manual' = 
       console.warn('VACUUM ANALYZE not supported or failed (expected on some cloud providers):', vacuumError);
     }
 
+    try {
+      console.log('Optimizing database statistics via ANALYZE...');
+      await prisma.$executeRawUnsafe('ANALYZE;');
+    } catch (e) {
+      console.warn('ANALYZE failed:', e);
+    }
+
     // 4. Get database table sizes after cleanup
     try {
       dbStatsAfter = await prisma.$queryRawUnsafe(`
