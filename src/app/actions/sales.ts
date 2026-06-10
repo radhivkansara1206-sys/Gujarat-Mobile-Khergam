@@ -265,6 +265,46 @@ export async function deleteSale(saleId: string) {
       // Delete the sale record
       await tx.sale.delete({ where: { id: saleId } });
 
+      // Recalculate closed register if the deleted sale was cash
+      if (sale.paymentType === 'cash') {
+        const targetRegister = await tx.cashRegister.findFirst({
+          where: { status: 'CLOSED', closedAt: { gte: sale.createdAt } },
+          orderBy: { closedAt: 'asc' }
+        });
+
+        if (targetRegister && targetRegister.closedAt) {
+          const prevReg = await tx.cashRegister.findFirst({
+            where: { status: 'CLOSED', closedAt: { lte: targetRegister.openedAt } },
+            orderBy: { closedAt: 'desc' }
+          });
+          const startTime = prevReg?.closedAt || targetRegister.openedAt;
+
+          // Note: sale is already deleted, so this aggregate sum naturally excludes it
+          const rSales = await tx.sale.aggregate({
+            where: { paymentType: 'cash', createdAt: { gte: startTime, lte: targetRegister.closedAt } },
+            _sum: { totalAmount: true }
+          });
+          const rExpenses = await tx.expense.aggregate({
+            where: { createdAt: { gte: startTime, lte: targetRegister.closedAt } },
+            _sum: { amount: true }
+          });
+          const moves = await tx.cashMovement.findMany({
+            where: { registerId: targetRegister.id, createdAt: { lte: targetRegister.closedAt } }
+          });
+          
+          const adds = moves.filter(m => m.type === 'ADDITION').reduce((a, b) => a + b.amount, 0);
+          const rems = moves.filter(m => m.type === 'REMOVAL').reduce((a, b) => a + b.amount, 0);
+
+          const expectedClosing = targetRegister.openingBalance + (rSales._sum.totalAmount || 0) + adds - (rExpenses._sum.amount || 0) - rems;
+          const discrepancy = (targetRegister.closingBalance || 0) - expectedClosing;
+
+          await tx.cashRegister.update({
+            where: { id: targetRegister.id },
+            data: { expectedClosingBalance: expectedClosing, discrepancyAmount: discrepancy }
+          });
+        }
+      }
+
       return true;
     });
 
@@ -287,16 +327,64 @@ export async function updateSalePaymentType(id: string, paymentType: string) {
       return { success: false, error: 'Invalid payment type' };
     }
 
-    const sale = await prisma.sale.update({
-      where: { id },
-      data: { paymentType }
+    const result = await prisma.$transaction(async (tx) => {
+      const sale = await tx.sale.findUnique({ where: { id } });
+      if (!sale) throw new Error('Sale not found');
+
+      const oldPaymentType = sale.paymentType;
+
+      const updatedSale = await tx.sale.update({
+        where: { id },
+        data: { paymentType }
+      });
+
+      // Recalculate closed register if old or new payment type is cash
+      if (oldPaymentType === 'cash' || paymentType === 'cash') {
+        const targetRegister = await tx.cashRegister.findFirst({
+          where: { status: 'CLOSED', closedAt: { gte: sale.createdAt } },
+          orderBy: { closedAt: 'asc' }
+        });
+
+        if (targetRegister && targetRegister.closedAt) {
+          const prevReg = await tx.cashRegister.findFirst({
+            where: { status: 'CLOSED', closedAt: { lte: targetRegister.openedAt } },
+            orderBy: { closedAt: 'desc' }
+          });
+          const startTime = prevReg?.closedAt || targetRegister.openedAt;
+
+          const rSales = await tx.sale.aggregate({
+            where: { paymentType: 'cash', createdAt: { gte: startTime, lte: targetRegister.closedAt } },
+            _sum: { totalAmount: true }
+          });
+          const rExpenses = await tx.expense.aggregate({
+            where: { createdAt: { gte: startTime, lte: targetRegister.closedAt } },
+            _sum: { amount: true }
+          });
+          const moves = await tx.cashMovement.findMany({
+            where: { registerId: targetRegister.id, createdAt: { lte: targetRegister.closedAt } }
+          });
+          
+          const adds = moves.filter(m => m.type === 'ADDITION').reduce((a, b) => a + b.amount, 0);
+          const rems = moves.filter(m => m.type === 'REMOVAL').reduce((a, b) => a + b.amount, 0);
+
+          const expectedClosing = targetRegister.openingBalance + (rSales._sum.totalAmount || 0) + adds - (rExpenses._sum.amount || 0) - rems;
+          const discrepancy = (targetRegister.closingBalance || 0) - expectedClosing;
+
+          await tx.cashRegister.update({
+            where: { id: targetRegister.id },
+            data: { expectedClosingBalance: expectedClosing, discrepancyAmount: discrepancy }
+          });
+        }
+      }
+
+      return updatedSale;
     });
 
     revalidatePath('/', 'layout');
-    return { success: true, data: sale };
+    return { success: true, data: result };
   } catch (error: any) {
     console.error('Update payment type error:', error);
-    return { success: false, error: 'Failed to update payment type' };
+    return { success: false, error: error.message || 'Failed to update payment type' };
   }
 }
 
