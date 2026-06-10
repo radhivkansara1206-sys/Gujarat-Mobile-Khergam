@@ -45,18 +45,11 @@ export default function ExpensesClient({ initialData, defaultStartDate }: Expens
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     
-    // Timezone-aware date resolution
+    // Parse custom date and time
     const dateInput = formData.get('date') as string;
     let finalDate = new Date();
     if (dateInput) {
-      const [year, month, day] = dateInput.split('-').map(Number);
-      const now = new Date();
-      if (year === now.getFullYear() && month - 1 === now.getMonth() && day === now.getDate()) {
-        finalDate = now;
-      } else {
-        // Construct the backdated expense at local Noon (12:00:00)
-        finalDate = new Date(year, month - 1, day, 12, 0, 0);
-      }
+      finalDate = new Date(dateInput);
     }
     formData.set('date', finalDate.toISOString());
 
@@ -237,17 +230,19 @@ export default function ExpensesClient({ initialData, defaultStartDate }: Expens
           </div>
           
           <div className="form-group">
-            <label className="form-label">Date (Optional)</label>
+            <label className="form-label">Date & Time *</label>
             <input 
               name="date" 
-              type="date" 
+              type="datetime-local" 
               className="form-input" 
+              required
               defaultValue={(() => {
                 const d = new Date();
-                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                return d.toISOString().slice(0, 16);
               })()} 
             />
-            <p className="form-hint">Leave as today to record right now, or select a past date.</p>
+            <p className="form-hint">Select the exact date and time at which the money was given.</p>
           </div>
 
           <div className="form-group">

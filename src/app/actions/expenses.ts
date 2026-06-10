@@ -29,15 +29,9 @@ export async function recordExpense(formData: FormData) {
     let createdAt = new Date();
     
     if (dateStr) {
-      const bounds = getLocalDayBounds(dateStr, offsetMinutes);
-      const register = await prisma.cashRegister.findFirst({
-        where: { openedAt: { gte: bounds.start, lt: bounds.end } },
-        orderBy: { openedAt: 'asc' }
-      });
-      if (register) {
-        createdAt = new Date(register.openedAt.getTime() + 60000);
-      } else {
-        createdAt = new Date(bounds.start.getTime() + 12 * 3600000);
+      createdAt = new Date(dateStr);
+      if (isNaN(createdAt.getTime())) {
+        return { success: false, error: 'Invalid date/time format' };
       }
     }
     
@@ -181,8 +175,51 @@ export async function deleteExpense(id: string) {
     const session = await requireAuth();
     if (session.role !== 'admin') return { success: false, error: 'Unauthorized' };
 
-    await prisma.expense.delete({
-      where: { id }
+    await prisma.$transaction(async (tx) => {
+      const exp = await tx.expense.findUnique({ where: { id } });
+      if (!exp) throw new Error('Expense not found');
+
+      // Delete the expense
+      await tx.expense.delete({
+        where: { id }
+      });
+
+      // Find the target register that was closed after this expense's createdAt
+      const targetRegister = await tx.cashRegister.findFirst({
+        where: { status: 'CLOSED', closedAt: { gte: exp.createdAt } },
+        orderBy: { closedAt: 'asc' }
+      });
+
+      if (targetRegister && targetRegister.closedAt) {
+        const prevReg = await tx.cashRegister.findFirst({
+          where: { status: 'CLOSED', closedAt: { lte: targetRegister.openedAt } },
+          orderBy: { closedAt: 'desc' }
+        });
+        const startTime = prevReg?.closedAt || targetRegister.openedAt;
+
+        const rSales = await tx.sale.aggregate({
+          where: { paymentType: 'cash', createdAt: { gte: startTime, lte: targetRegister.closedAt } },
+          _sum: { totalAmount: true }
+        });
+        const rExpenses = await tx.expense.aggregate({
+          where: { createdAt: { gte: startTime, lte: targetRegister.closedAt } },
+          _sum: { amount: true }
+        });
+        const moves = await tx.cashMovement.findMany({
+          where: { registerId: targetRegister.id, createdAt: { lte: targetRegister.closedAt } }
+        });
+        
+        const adds = moves.filter(m => m.type === 'ADDITION').reduce((a, b) => a + b.amount, 0);
+        const rems = moves.filter(m => m.type === 'REMOVAL').reduce((a, b) => a + b.amount, 0);
+
+        const expectedClosing = targetRegister.openingBalance + (rSales._sum.totalAmount || 0) + adds - (rExpenses._sum.amount || 0) - rems;
+        const discrepancy = (targetRegister.closingBalance || 0) - expectedClosing;
+
+        await tx.cashRegister.update({
+          where: { id: targetRegister.id },
+          data: { expectedClosingBalance: expectedClosing, discrepancyAmount: discrepancy }
+        });
+      }
     });
 
     revalidatePath('/', 'layout');
