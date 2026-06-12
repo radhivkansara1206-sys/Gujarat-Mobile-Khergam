@@ -98,6 +98,11 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const exchangeItemData = items.find(i => i.id === exchangeItemId);
   const total = selectedItemData ? selectedItemData.sellingPrice * quantity : 0;
   const displayTotal = (typeof customPaidAmount === 'number' && !isNaN(customPaidAmount)) ? customPaidAmount : total;
+  
+  const isSimCategory = selectedItemData && (
+    selectedItemData.categoryName.toLowerCase().includes('sim') || 
+    selectedItemData.categoryName === 'SIM Cards'
+  );
 
   useEffect(() => {
     if (isExchange && selectedItemData && exchangeItemData) {
@@ -621,7 +626,7 @@ Thank you for shopping with us! 🙏`;
                 type="number"
                 className="form-input"
                 min="1"
-                max={!isCustomItem ? (selectedItemData?.stock || 999) : 999}
+                max={(!isCustomItem && !isSimCategory) ? (selectedItemData?.stock || 999) : 999}
                 value={quantity}
                 onChange={e => {
                   const q = parseInt(e.target.value) || 1;

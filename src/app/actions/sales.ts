@@ -90,10 +90,17 @@ export async function recordSale(formData: FormData) {
         finalItemId = newItem.id;
         unitPrice = customPrice;
       } else {
-        const item = await tx.item.findUnique({ where: { id: finalItemId } });
+        const item = await tx.item.findUnique({ 
+          where: { id: finalItemId },
+          include: { category: true }
+        });
         if (!item) throw new Error('Item not found');
         if (!item.isActive) throw new Error('Item is no longer available');
-        if (item.stock < quantity) throw new Error(`Insufficient stock. Available: ${item.stock}`);
+        
+        const isSim = item.category.name.toLowerCase().includes('sim');
+        if (!isSim && item.stock < quantity) {
+          throw new Error(`Insufficient stock. Available: ${item.stock}`);
+        }
         unitPrice = item.sellingPrice;
         
         // Update default price if requested
