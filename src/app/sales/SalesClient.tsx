@@ -78,7 +78,6 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const [customPaidAmount, setCustomPaidAmount] = useState<number | ''>('');
   const [paymentType, setPaymentType] = useState<'cash' | 'online' | 'gift'>('cash');
   const [isCustomItem, setIsCustomItem] = useState(false);
-  const [customCategoryId, setCustomCategoryId] = useState('');
   
   // Exchange states
   const [isExchange, setIsExchange] = useState(false);
@@ -99,17 +98,6 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
   const exchangeItemData = items.find(i => i.id === exchangeItemId);
   const total = selectedItemData ? selectedItemData.sellingPrice * quantity : 0;
   const displayTotal = (typeof customPaidAmount === 'number' && !isNaN(customPaidAmount)) ? customPaidAmount : total;
-
-  const isSimCategory = selectedItemData && (
-    selectedItemData.categoryName.toLowerCase().includes('sim') || 
-    selectedItemData.categoryName === 'SIM Cards'
-  );
-  const selectedCustomCategory = categories.find(c => c.id === customCategoryId);
-  const isCustomSim = isCustomItem && selectedCustomCategory && (
-    selectedCustomCategory.name.toLowerCase().includes('sim') || 
-    selectedCustomCategory.name === 'SIM Cards'
-  );
-  const showSimFields = !!(isSimCategory || isCustomSim);
 
   useEffect(() => {
     if (isExchange && selectedItemData && exchangeItemData) {
@@ -138,20 +126,6 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
     }
     formData.set('date', finalDate.toISOString());
 
-    if (showSimFields) {
-      const simDetails = {
-        isSim: true,
-        operator: formData.get('simOperator') as string,
-        phoneNumber: formData.get('simPhoneNumber') as string,
-        simNumber: formData.get('simNumber') as string,
-        customerName: formData.get('simCustomerName') as string,
-        aadhaarNumber: formData.get('simAadhaarNumber') as string,
-        frcAmount: Number(formData.get('simFrcAmount') || 0),
-        notes: formData.get('notes') as string || ''
-      };
-      formData.set('notes', JSON.stringify(simDetails));
-    }
-
     const result = await recordSale(formData);
     if (result.success) {
       showToast('Sale recorded successfully! Stock updated.');
@@ -159,7 +133,6 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
       setSelectedItem(null);
       setQuantity(1);
       setPaymentType('cash');
-      setCustomCategoryId('');
       router.refresh();
       // Refresh sales data
       const refreshed = await getSales({ startDate, endDate, paymentType: filterPayment, categoryId: filterCategory });
@@ -239,24 +212,11 @@ export default function SalesClient({ initialSales, categories, items, isAdmin }
     if (phone.length === 10) phone = '91' + phone;
 
     const dt = new Date(receiptSale.createdAt).toLocaleString('en-IN');
-    
-    let notesText = '';
-    if (receiptSale.notes && receiptSale.notes.startsWith('{') && receiptSale.notes.endsWith('}')) {
-      try {
-        const sim = JSON.parse(receiptSale.notes);
-        if (sim.isSim) {
-          notesText = `\nCategory: SIM Card Activation\nOperator: ${sim.operator}\nMobile No: ${sim.phoneNumber}\nCustomer: ${sim.customerName}${sim.frcAmount > 0 ? `\nFRC: ₹${sim.frcAmount}` : ''}`;
-        }
-      } catch (e) {}
-    } else if (receiptSale.notes) {
-      notesText = `\nNotes: ${receiptSale.notes}`;
-    }
-
     const text = `*GUJARAT MOBILE KHERGAM*
 --------------------------------
 *Digital Receipt*
 Date: ${dt}
-Item: ${receiptSale.item?.name} ${receiptSale.item?.brand ? `(${receiptSale.item?.brand})` : ''}${notesText}
+Item: ${receiptSale.item?.name} ${receiptSale.item?.brand ? `(${receiptSale.item?.brand})` : ''}
 Quantity: ${receiptSale.quantity}
 Payment: ${receiptSale.paymentType.toUpperCase()}
 *Total: ₹${receiptSale.totalAmount}*
@@ -560,32 +520,8 @@ Thank you for shopping with us! 🙏`;
                       )}
                     </td>
                     <td className="text-secondary">
-                      {sale.referenceNumber && <div style={{ marginBottom: '4px', fontWeight: 600 }}>{sale.referenceNumber}</div>}
-                      {(() => {
-                        if (!sale.notes) return null;
-                        if (sale.notes.startsWith('{') && sale.notes.endsWith('}')) {
-                          try {
-                            const sim = JSON.parse(sale.notes);
-                            if (sim.isSim) {
-                              return (
-                                <div style={{ fontSize: '0.85rem', lineHeight: '1.4', background: 'var(--success-light)', padding: '6px 8px', borderRadius: '6px', color: '#065f46', border: '1px solid #a7f3d0' }}>
-                                  <div style={{ fontWeight: 700 }}>
-                                    📶 {sim.operator} SIM
-                                  </div>
-                                  <div style={{ fontWeight: 600 }}>📞 {sim.phoneNumber}</div>
-                                  {sim.customerName && <div>👤 {sim.customerName}</div>}
-                                  {sim.aadhaarNumber && <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>🆔 Aadhaar: {sim.aadhaarNumber}</div>}
-                                  {sim.frcAmount > 0 && <div style={{ fontSize: '0.75rem', fontWeight: 600 }}>FRC: ₹{sim.frcAmount}</div>}
-                                  {sim.notes && <div style={{ fontStyle: 'italic', fontSize: '0.75rem', marginTop: '2px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '2px' }}>Note: {sim.notes}</div>}
-                                </div>
-                              );
-                            }
-                          } catch (e) {
-                            // ignore json parse error, fall back to showing raw notes
-                          }
-                        }
-                        return <div style={{ fontSize: '0.85rem', fontStyle: 'italic' }}>{sale.notes}</div>;
-                      })()}
+                      {sale.referenceNumber && <div style={{ marginBottom: '2px' }}>{sale.referenceNumber}</div>}
+                      {sale.notes && <div style={{ fontSize: '0.85rem', fontStyle: 'italic' }}>{sale.notes}</div>}
                       {!sale.referenceNumber && !sale.notes && '—'}
                     </td>
                     <td className="text-secondary">{sale.user?.name}</td>
@@ -659,13 +595,7 @@ Thank you for shopping with us! 🙏`;
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">Category *</label>
-                  <select 
-                    name="customCategoryId" 
-                    className="form-select" 
-                    value={customCategoryId} 
-                    onChange={e => setCustomCategoryId(e.target.value)} 
-                    required={isCustomItem}
-                  >
+                  <select name="customCategoryId" className="form-select" required={isCustomItem}>
                     <option value="">Choose category...</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -727,57 +657,6 @@ Thank you for shopping with us! 🙏`;
               )}
             </div>
           </div>
-
-          {showSimFields && (
-            <div style={{ padding: '1rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', marginBottom: '1rem' }}>
-              <h4 style={{ margin: '0 0 0.75rem 0', color: '#15803d', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
-                📶 SIM Card Activation Details
-              </h4>
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Operator *</label>
-                  <select name="simOperator" className="form-select" required={showSimFields}>
-                    <option value="Jio">Jio</option>
-                    <option value="Airtel">Airtel</option>
-                    <option value="VI">VI</option>
-                    <option value="BSNL">BSNL</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Mobile Number *</label>
-                  <input 
-                    name="simPhoneNumber" 
-                    type="tel" 
-                    pattern="[0-9]{10}"
-                    maxLength={10}
-                    placeholder="e.g. 9876543210"
-                    className="form-input" 
-                    required={showSimFields} 
-                  />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">SIM ICCID (Optional)</label>
-                  <input name="simNumber" type="text" className="form-input" placeholder="e.g. 8991..." maxLength={20} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">First Recharge (FRC) Amount (₹)</label>
-                  <input name="simFrcAmount" type="number" className="form-input" placeholder="e.g. 299" min="0" />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Customer Name *</label>
-                  <input name="simCustomerName" type="text" className="form-input" placeholder="Customer name" required={showSimFields} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Aadhaar Card Number (Optional)</label>
-                  <input name="simAadhaarNumber" type="text" pattern="[0-9]{12}" maxLength={12} className="form-input" placeholder="12-digit Aadhaar" />
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="form-group">
             <label className="form-label">Date of Sale *</label>
