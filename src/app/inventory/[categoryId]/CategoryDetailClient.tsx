@@ -190,7 +190,7 @@ export default function CategoryDetailClient({ category, items, isAdmin }: Categ
                           {isAdmin && <td>{formatCurrency(item.purchasePrice)}</td>}
                           <td className="font-semibold">{formatCurrency(item.sellingPrice)}</td>
                           <td>{item.stock}</td>
-                          <td><StockBadge stock={item.stock} threshold={item.lowStockThreshold} /></td>
+                          <td><StockBadge stock={item.stock} threshold={item.lowStockThreshold} isSimCategory={category.name.toLowerCase().includes('sim')} /></td>
                           {isAdmin && (
                             <td className="actions-col">
                               <div className="table-actions">

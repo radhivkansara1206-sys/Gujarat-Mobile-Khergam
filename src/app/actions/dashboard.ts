@@ -47,10 +47,17 @@ export async function getDashboardStats() {
     // Manual filter for SQLite compatibility (no column comparison in where)
     const allActiveItems = await prisma.item.findMany({
       where: { isActive: true },
-      select: { stock: true, lowStockThreshold: true, isAlertDismissed: true },
+      select: {
+        stock: true,
+        lowStockThreshold: true,
+        isAlertDismissed: true,
+        category: {
+          select: { name: true }
+        }
+      },
     });
-    const lowStockCount = allActiveItems.filter(i => !i.isAlertDismissed && i.stock > 0 && i.stock <= i.lowStockThreshold).length;
-    const outOfStockCount = allActiveItems.filter(i => !i.isAlertDismissed && i.stock <= 0).length;
+    const lowStockCount = allActiveItems.filter(i => !i.isAlertDismissed && i.stock > 0 && i.stock <= i.lowStockThreshold && !i.category.name.toLowerCase().includes('sim')).length;
+    const outOfStockCount = allActiveItems.filter(i => !i.isAlertDismissed && i.stock <= 0 && !i.category.name.toLowerCase().includes('sim')).length;
 
     return {
       success: true,
@@ -149,8 +156,8 @@ export async function getLowStockItems() {
       orderBy: { stock: 'asc' },
     });
 
-    // Filter items where stock <= lowStockThreshold and not dismissed
-    const lowStockItems = items.filter(i => !i.isAlertDismissed && i.stock <= i.lowStockThreshold);
+    // Filter items where stock <= lowStockThreshold and not dismissed, and exclude SIM categories
+    const lowStockItems = items.filter(i => !i.isAlertDismissed && i.stock <= i.lowStockThreshold && !i.category.name.toLowerCase().includes('sim'));
 
     return { success: true, data: lowStockItems };
   } catch (error: any) {

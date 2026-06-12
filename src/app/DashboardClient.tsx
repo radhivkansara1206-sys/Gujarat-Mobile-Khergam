@@ -538,8 +538,9 @@ ${notes.trim() || 'All systems clear. Counter closed.'}
           <div className="category-grid-compact">
             {categories.map((cat: any) => {
               const items = cat.items || [];
-              const lowStock = items.filter((i: any) => !i.isAlertDismissed && i.stock > 0 && i.stock <= i.lowStockThreshold).length;
-              const outOfStock = items.filter((i: any) => !i.isAlertDismissed && i.stock <= 0).length;
+              const isSimCategory = cat.name.toLowerCase().includes('sim');
+              const lowStock = isSimCategory ? 0 : items.filter((i: any) => !i.isAlertDismissed && i.stock > 0 && i.stock <= i.lowStockThreshold).length;
+              const outOfStock = isSimCategory ? 0 : items.filter((i: any) => !i.isAlertDismissed && i.stock <= 0).length;
               return (
                 <CategoryCard
                   key={cat.id}

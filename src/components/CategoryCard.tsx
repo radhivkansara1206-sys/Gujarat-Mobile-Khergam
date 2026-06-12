@@ -122,9 +122,23 @@ export default function CategoryCard({
                     {item.brand && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.brand}</span>}
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '2px 6px', borderRadius: '4px', background: item.stock <= 0 ? 'var(--danger-light)' : item.stock <= item.lowStockThreshold ? 'var(--warning-light)' : 'var(--success-light)', color: item.stock <= 0 ? 'var(--danger)' : item.stock <= item.lowStockThreshold ? 'var(--warning-dark)' : 'var(--success-dark)' }}>
-                      {item.stock} qty
-                    </span>
+                    {(() => {
+                      const isSim = name.toLowerCase().includes('sim');
+                      const isOut = !isSim && item.stock <= 0;
+                      const isLow = !isSim && item.stock > 0 && item.stock <= item.lowStockThreshold;
+                      return (
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          fontWeight: 600, 
+                          padding: '2px 6px', 
+                          borderRadius: '4px', 
+                          background: isOut ? 'var(--danger-light)' : isLow ? 'var(--warning-light)' : 'var(--success-light)', 
+                          color: isOut ? 'var(--danger)' : isLow ? 'var(--warning-dark)' : 'var(--success-dark)' 
+                        }}>
+                          {item.stock} qty
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
