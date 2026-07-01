@@ -6,7 +6,7 @@ A completely custom-built, modern web application designed for mobile shop inven
 > *The entire source code of this application is open for demonstration purposes, but the **database and all business data are strictly private**. Sensitive credentials, database URLs, and environment variables are heavily secured using `.env` encryption and are NEVER published to GitHub. You are viewing the architecture, not the data.*
 
 ## 🚀 Live Application & Source Code
-**Production Link:** [https://gujaratmobilekhergam.vercel.app](https://gujaratmobilekhergam.vercel.app)  
+**Production Link:** [https://gujarat-mobile-khergam.vercel.app](https://gujarat-mobile-khergam.vercel.app)  
 **GitHub Repository:** [https://github.com/radhivkansara1206-sys/Gujarat-Mobile-Khergam.git](https://github.com/radhivkansara1206-sys/Gujarat-Mobile-Khergam.git)  
 *(Note: Requires authorized login to access the dashboard)*
 
